@@ -1,9 +1,7 @@
 <div align="center"> 
   <img alt="Vue Teddy Store"  src="assets/logo.png"> 
-  <p>
-    <span style="font-weight:bold">Simple reactive store for Vue</span> <br/>
-    <span>Can completely replace Vuex, based on Vue build-in features with Vue Composition Api (Vue 3)</span>
-  </p>
+  <p style="font-weight:bold">Simple reactive store for Vue</p>
+  <p>Replacement of Vuex, based on Vue build-in features with Vue Composition Api (Vue 3)</p>
 </div>
 
 <p align="center">
