@@ -12,6 +12,16 @@ function resolvePath(instance) {
   }
 }
 
+export function debounce(fn, wait = 100) {
+  let timeout
+  return function(...args) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => {
+      fn.apply(this, args)
+    }, wait)
+  }
+}
+
 export function get(obj, path, defaultValue, instance) {
   return String(path)
     .replace(/\[/g, '.')
