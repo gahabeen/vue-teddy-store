@@ -1,6 +1,6 @@
 {
   "name": "vue-teddy-store",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "lib/vue-teddy-store.umd.js",
   "module": "lib/vue-teddy-store.esm.js",
   "unpkg": "lib/vue-teddy-store.min.js",
@@ -29,11 +29,6 @@
     "@rollup/plugin-buble": "^0.21.3",
     "@rollup/plugin-commonjs": "^13.0.0",
     "@rollup/plugin-node-resolve": "^8.1.0",
-    "rollup": "^2.18.1",
-    "rollup-plugin-auto-external": "^2.0.0",
-    "rollup-plugin-internal": "^1.0.4",
-    "rollup-plugin-terser": "^6.1.0",
-    "rollup-plugin-vue": "^5.1.9",
     "@vue/cli-plugin-babel": "~4.4.0",
     "@vue/cli-plugin-eslint": "~4.4.0",
     "@vue/cli-plugin-unit-jest": "~4.4.0",
@@ -43,6 +38,11 @@
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "flush-promises": "^1.0.2",
+    "rollup": "^2.18.1",
+    "rollup-plugin-auto-external": "^2.0.0",
+    "rollup-plugin-internal": "^1.0.4",
+    "rollup-plugin-terser": "^6.1.0",
+    "rollup-plugin-vue": "^5.1.9",
     "vue-template-compiler": "^2.6.11"
   }
 }
