@@ -9,7 +9,7 @@
   "scripts": {
     "serve": "vue-cli-service serve ./examples",
     "test:unit:watch": "vue-cli-service test:unit --watch",
-    "test:unit": "vue-cli-service test:unit --coverage",
+    "test:unit": "vue-cli-service test:unit",
     "build": "npm run build:esm & npm run build:umd & npm run build:iife",
     "build:esm": "rollup --config build/rollup.config.js --format es --file lib/vue-teddy-store.esm.js",
     "build:umd": "rollup --config build/rollup.config.js --format umd --file lib/vue-teddy-store.umd.js",
