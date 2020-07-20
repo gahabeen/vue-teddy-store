@@ -1,5 +1,5 @@
 <div align="center"> 
-  <img alt="Vue Teddy Store"  src="./assets/logo.png"> 
+  <img alt="Vue Teddy Store"  src="assets/logo.png"> 
   <p style="font-weight:bold">Minimalist store manager for Vue - based on Vue Composition Api (Vue 3)</p>
 </div>
 
