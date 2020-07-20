@@ -2,10 +2,11 @@ const VARIABLE_PATH = /({.+?})/gim
 
 function resolvePath(instance) {
   return (path) => {
-    const variablePath = get(path.slice(1, -1), instance)
+    const variablePath = get(instance, path.slice(1, -1).trim())
     if (['string', 'number'].includes(typeof variablePath)) {
       return variablePath
     } else {
+      /* istanbul ignore next */
       throw new Error`Couldn't not find any proper value for ${variablePath}`()
     }
   }
@@ -21,6 +22,7 @@ export function get(obj, path, defaultValue, instance) {
       try {
         acc = acc[v] === undefined ? defaultValue : acc[v]
       } catch (e) {
+        /* istanbul ignore next */
         return defaultValue
       }
       return acc
@@ -34,19 +36,22 @@ export function set(obj, path, value, instance) {
     .replace(VARIABLE_PATH, resolvePath(instance))
     .split('.')
 
+  const cleanStep = (key) => key.replace(/^\^/, '')
+
   const _set = (item, steps, val) => {
     const step = steps.shift()
     if (steps.length > 0) {
       if (Number.isInteger(+steps[0])) {
         item[step] = []
+        return _set(item[step], steps, val)
       } else if (!item[step]) {
         // To force an integer as an object property, prefix it with ^
         // If somehow you want to have a ^ in a key name, double it ^^
-        item[step.replace(/^\^/, '')] = {}
+        item[cleanStep(step)] = {}
+        return _set(item[cleanStep(step)], steps, val)
       }
-      return _set(item[step], steps, val)
     } else {
-      item[step] = val
+      item[cleanStep(step)] = val
     }
   }
 
