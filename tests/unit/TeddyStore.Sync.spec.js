@@ -6,6 +6,7 @@ import TeddyStore from '../../src/index'
 Vue.use(VueCompositionApi)
 
 import { prefix } from '../../src/plugins/cache'
+import { sleep } from '../helpers'
 
 // const localVue = createLocalVue()
 // localVue.use(VueCompositionApi)
@@ -22,6 +23,7 @@ describe('[Sync] - TeddyStore.js', () => {
 
     Vue.use(store.add('user', { state }).activate(['cache', 'sync']))
     const wrapper = mount({ template: `<div></div>` })
+    await sleep(600)
     await flushPromises()
     expect(JSON.parse(window.localStorage.getItem(prefix('user')))).toEqual(wrapper.vm.$teddy.stores.user.state)
   })
