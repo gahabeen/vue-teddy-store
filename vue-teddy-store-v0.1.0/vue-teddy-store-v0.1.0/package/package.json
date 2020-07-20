@@ -1,13 +1,9 @@
 {
   "name": "vue-teddy-store",
   "version": "0.1.0",
-  "main": "lib/vue-teddy-store.umd.js",
-  "module": "lib/vue-teddy-store.esm.js",
-  "unpkg": "lib/vue-teddy-store.min.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/gahabeen/vue-teddy-store"
-  },
+  "main": "lib/vue-formulate-extended.umd.js",
+  "module": "lib/vue-formulate-extended.esm.js",
+  "unpkg": "lib/vue-formulate-extended.min.js",
   "author": "Gabin Desserprit <desserprit.gabin@gmail.com>",
   "license": "MIT",
   "scripts": {
