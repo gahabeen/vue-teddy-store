@@ -5,6 +5,8 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/vue-teddy-store"><img alt="npm" src="https://img.shields.io/npm/v/vue-teddy-stored"></a>
+  <a href="https://www.npmjs.com/package/vue-teddy-store"><img alt="npm" alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/vue-teddy-store"></a>
+  <a href="https://www.npmjs.com/package/vue-teddy-store"><img alt="npm" src="https://github.com/gahabeen/vue-teddy-store/workflows/tests/badge.svg"></a>
   <a href="https://github.com/gahabeen/vue-teddy-stored"><img alt="npm" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
