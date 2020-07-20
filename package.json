@@ -1,6 +1,6 @@
 {
   "name": "vue-teddy-store",
-  "version": "0.1.2",
+  "version": "0.1.21",
   "main": "lib/vue-teddy-store.umd.js",
   "module": "lib/vue-teddy-store.esm.js",
   "unpkg": "lib/vue-teddy-store.min.js",
