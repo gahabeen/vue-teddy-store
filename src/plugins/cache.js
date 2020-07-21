@@ -1,5 +1,5 @@
 import { watch } from '@vue/composition-api'
-import { debounce } from '../utils'
+// import { debounce } from '../utils'
 
 export const prefix = (name) => `teddy:store:${name}`
 export default {
@@ -10,15 +10,15 @@ export default {
     if (localStorage) {
       // Fetched saved state when exists
       const cached = localStorage.getItem(prefix(name))
-      if (cached) store._state = { ...store._state, ...JSON.parse(cached) }
+      if (cached) store.state = { ...store.state, ...JSON.parse(cached) }
       // Watch for mutations, save them
       watch(
-        store._state,
-        debounce((newState, oldState) => {
+        store.state,
+        (newState, oldState) => {
           if (newState !== oldState) {
             localStorage.setItem(prefix(name), JSON.stringify(newState))
           }
-        }, 500),
+        },
         { immediate: true, deep: true }
       )
     }

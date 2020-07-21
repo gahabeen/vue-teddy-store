@@ -1505,10 +1505,10 @@
     sass "^1.18.0"
     stylus "^0.54.5"
 
-"@vue/composition-api@2.6.7":
-  version "0.6.7"
-  resolved "https://registry.yarnpkg.com/@vue/composition-api/-/composition-api-0.6.7.tgz#4481b547cea65dc936432f7efcf1a39f9c69420c"
-  integrity sha512-WAWEQK4urEsMNe3OyOp7VnMmegRZT2yRB3fDGLRXPMdfuo4+nM+uMEhUgDiUg9LFSXfLWhjwuFOJ2hnS2X7AUw==
+"@vue/composition-api@^1.0.0-beta.5":
+  version "1.0.0-beta.5"
+  resolved "https://registry.yarnpkg.com/@vue/composition-api/-/composition-api-1.0.0-beta.5.tgz#2bba64ff1f8cb851a4d45f3082d671de8d37d22b"
+  integrity sha512-Une07wyXC0UUqOOfPzC0nPg+JezJbAeN2zyRPWhClT1skXy587f9GDGWUhYpJ3bGhkGpgfmSmS4SylQ3J/G9jw==
   dependencies:
     tslib "^2.0.0"
 

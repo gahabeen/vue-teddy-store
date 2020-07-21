@@ -7,9 +7,24 @@ function resolvePath(instance) {
       return variablePath
     } else {
       /* istanbul ignore next */
-      throw new Error`Couldn't not find any proper value for ${variablePath}`()
+      throw new Error(`Couldn't not find any proper value for ${variablePath} at ${path}`)
     }
   }
+}
+
+export function isComputed(obj) {
+  if (!obj || typeof obj !== 'object' || !('value' in obj)) return false
+  const desc = Object.getOwnPropertyDescriptor(obj, 'value')
+  return typeof desc.get === 'function' && typeof desc.set === 'function'
+}
+
+export function omit(obj, keys = []) {
+  return Object.keys(obj).reduce((acc, key) => {
+    if (!key.includes(keys)) {
+      acc[key] = obj[key]
+    }
+    return acc
+  }, {})
 }
 
 export function debounce(fn, wait = 100) {
@@ -22,24 +37,65 @@ export function debounce(fn, wait = 100) {
   }
 }
 
+export function hasProp(obj, key) {
+  if (obj && typeof obj !== 'object') {
+    if (isComputed(obj) && key in obj.value) {
+      return true
+    } else if (key in obj) {
+      return true
+    } else {
+      return false
+    }
+  } else {
+    return false
+  }
+}
+
+export function getProp(obj, key) {
+  if (!obj || typeof obj !== 'object') return
+  if (isComputed(obj) && key in obj.value) {
+    return obj.value[key]
+  } else if (key in obj) {
+    return obj[key]
+  }
+}
+
 export function get(obj, path, defaultValue, instance) {
-  return String(path)
+  const steps = String(path)
     .replace(/\[/g, '.')
     .replace(/]/g, '')
     .replace(VARIABLE_PATH, resolvePath(instance))
     .split('.')
-    .reduce((acc, v) => {
-      try {
-        acc = acc[v] === undefined ? defaultValue : acc[v]
-      } catch (e) {
-        /* istanbul ignore next */
-        return defaultValue
-      }
-      return acc
-    }, obj)
+
+  function _get(item, steps, fallback) {
+    if (steps.length > 0) {
+      const step = steps.shift()
+      const stepValue = getProp(item, step)
+      return _get(stepValue !== undefined ? stepValue : fallback, steps, fallback)
+    } else {
+      return item
+    }
+  }
+
+  return _get(obj, steps, defaultValue)
+}
+
+export function setProp(obj, key, value) {
+  if (isComputed(obj) && key in obj.value) {
+    obj.value[key] = value
+    return obj.value[key]
+  // } else if (Array.isArray(obj)) {
+  //   obj.splice(key, 1, value)
+  //   return obj[key]
+  } else {
+    console.log("setProp", obj, key, value);
+    obj[key] = value
+    return obj[key]
+  }
 }
 
 export function set(obj, path, value, instance) {
+  console.log("set", obj, path, value);
   const steps = String(path)
     .replace(/\[/g, '.')
     .replace(/]/g, '')
@@ -49,23 +105,33 @@ export function set(obj, path, value, instance) {
   const cleanStep = (key) => key.replace(/^\^/, '')
 
   const _set = (item, steps, val) => {
-    const step = steps.shift()
+    const step = cleanStep(steps.shift())
     if (steps.length > 0) {
-      if (Number.isInteger(+steps[0])) {
-        item[step] = []
-        return _set(item[step], steps, val)
-      } else if (!item[step]) {
+      const nextStep = steps[0]
+      if (!hasProp(item, step) && Number.isInteger(+nextStep)) {
+        return _set(setProp(item, step, []), steps, val)
+      } else if (!hasProp(item, step)) {
         // To force an integer as an object property, prefix it with ^
         // If somehow you want to have a ^ in a key name, double it ^^
-        item[cleanStep(step)] = {}
-        return _set(item[cleanStep(step)], steps, val)
+        return _set(setProp(item, step, {}), steps, val)
+      } else {
+        return _set(getProp(item, step), steps, val)
       }
     } else {
-      item[cleanStep(step)] = val
+      setProp(item, step, val)
     }
   }
 
-  _set(obj, steps, value)
+  if (steps.length > 0) {
+    _set(obj, steps, value)
+  } else {
+    // hmm
+    if (obj.value) {
+      obj.value = value
+    } else {
+      obj = value
+    }
+  }
 
   return obj
 }

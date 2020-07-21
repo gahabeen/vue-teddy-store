@@ -1,4 +1,5 @@
-import { computed, reactive, ref, isRef, watch } from '@vue/composition-api'
+import './install/vue-composition-api'
+import { computed, watch, ref, isRef } from '@vue/composition-api'
 
 import * as utils from './utils'
 
@@ -19,27 +20,21 @@ function getInstance(...solutions) {
 
 export default class TeddyStore {
   constructor() {
-    this._stores = reactive({})
-    this._plugins = reactive({
+    this._stores = {}
+    this._plugins = {
       cache: CachePlugin,
       history: HistoryPlugin,
       sync: SyncPlugin,
-    })
+    }
   }
 
   add(name, store) {
-    // eslint-disable-next-line no-unused-vars
-    const { _state: A, state: B, methods: C, watchers: D, ...others } = store
+    const others = utils.omit(store, ['state', 'methods', 'watchers'])
 
-    const { _state, state } = TeddyStore.createState(store._state || store.state || {})
-    this._stores = {
-      ...this._stores,
-      [name]: reactive({
-        _state,
-        state,
-        ...(store.methods || {}),
-        ...others,
-      }),
+    this._stores[name] = {
+      state: TeddyStore.createState(store.state),
+      ...(store.methods || {}),
+      ...others,
     }
 
     const watchers = []
@@ -51,20 +46,19 @@ export default class TeddyStore {
 
     for (let watcher of watchers) {
       if (typeof watcher === 'function') {
-        watch(this._stores[name].state, watcher, { deep: true })
+        watch(() => this._stores[name].state.value, watcher, { deep: true })
       } else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
         const { handler, path, paths = [], ...options } = watcher
         if (path) {
-          // console.log("utils.get(this._stores[name].state, path)", utils.get(this._stores[name].state, path));
-          watch(() => utils.get(this._stores[name].state, path), handler, { deep: true, ...options })
+          watch(() => utils.get(this._stores[name].state.value, path), handler, { deep: true, ...options })
         } else if (paths.length > 0) {
           watch(
-            paths.map((p) => () => utils.get(this._stores[name].state, p)),
+            paths.map((p) => () => utils.get(this._stores[name].state.value, p)),
             handler,
             { deep: true, ...options }
           )
         } else {
-          watch(() => this._stores[name].state, handler, { deep: true, ...options })
+          watch(() => this._stores[name].state.value, handler, { deep: true, ...options })
         }
       }
     }
@@ -73,8 +67,12 @@ export default class TeddyStore {
   }
 
   use(plugin = {}) {
-    if (typeof plugin.install === 'function') plugin.install(this)
-    if (typeof plugin.handle === 'function') Object.keys(this._stores).map((name) => plugin.handle.call(this, { name, store: this._stores[name] }))
+    if (typeof plugin.install === 'function') {
+      plugin.install(this)
+    }
+    if (typeof plugin.handle === 'function') {
+      Object.keys(this._stores).map((name) => plugin.handle.call(this, { name, store: this._stores[name] }))
+    }
     return this
   }
 
@@ -89,7 +87,6 @@ export default class TeddyStore {
   }
 
   install(VueInstance) {
-    VueInstance.prototype.$Teddy = TeddyStore
     VueInstance.prototype.$teddy = this
   }
 
@@ -97,58 +94,48 @@ export default class TeddyStore {
     return this._stores
   }
 
-  static createState(stateObj = {}) {
-    const _state = isRef(stateObj) ? stateObj : ref(stateObj)
-    /* Until it's made available by Vue 3, be careful with { state } as it can be deeply mutable*/
-    // const state = readonly(() => _state.value)
-    const state = computed(() => _state.value)
-    return { _state, state }
+  static createState(state) {
+    if (isRef(state)) {
+      return state
+      // } else if (isReactive(state)) {
+      //   return toRef(state)
+    } else {
+      return ref(state)
+    }
   }
 
   get(name, path) {
-    return TeddyStore.get.call(this, name, path)
+    return TeddyStore.get(name, path, this)
   }
 
   static get(name, path, context) {
     context = context || this
     return function get() {
       const _instance = getInstance(this, context)
-      try {
-        return utils.get(_instance.stores[name].state, path, undefined, context)
-      } catch (error) {
-        /* istanbul ignore next */
-        throw new Error(`Couldn't compute (get) path '${path}' for '${name}'`)
-      }
+      return utils.get(_instance, `stores.${name}.value.state.value.${path}`, undefined, context)
     }
   }
 
   set(name, path) {
-    return TeddyStore.set.call(this, name, path)
+    return TeddyStore.set(name, path, this)
   }
 
   static set(name, path, context) {
     context = context || this
     return function set(value) {
       const _instance = getInstance(this, context)
-      try {
-        utils.set(_instance.stores[name]._state, path, value, context)
-      } catch (error) {
-        /* istanbul ignore next */
-        throw new Error(`Couldn't compute (set) path '${path}' for '${name}'`)
-      }
+      utils.set(_instance.stores, `${name}.state.${path}`, value, context)
     }
   }
 
   compute(name, path) {
-    return TeddyStore.compute.call(this, name, path)
+    return TeddyStore.compute(name, path, this)
   }
 
-  static compute(name, path) {
-    const get = TeddyStore.get.call(this, name, path)
-    const set = TeddyStore.set.call(this, name, path)
-    return {
-      get,
-      set,
-    }
+  static compute(name, path, context) {
+    context = context || this
+    const get = TeddyStore.get(name, path, context)
+    const set = TeddyStore.set(name, path, context)
+    return computed({ get, set })
   }
 }

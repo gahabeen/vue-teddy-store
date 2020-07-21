@@ -7,7 +7,7 @@ export default {
     if (window) {
       window.addEventListener('storage', (e) => {
         if (e.key === prefix(name)) {
-          store._state = reactive({ ...store._state, ...JSON.parse(e.newValue) })
+          store.state = reactive({ ...store.state, ...JSON.parse(e.newValue) })
         }
       })
     }

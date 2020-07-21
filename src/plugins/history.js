@@ -4,7 +4,7 @@ export default {
   handle({ store }) {
     store._history = reactive([])
     watch(
-      store._state,
+      store.state,
       (newState) => {
         store._history.push(newState)
       },
