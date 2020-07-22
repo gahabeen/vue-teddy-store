@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.23
+  * vue-teddy-store v0.1.24
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -95,6 +95,7 @@ var VueTeddyStore = (function (compositionApi) {
           if (variablePath !== undefined) {
             return variablePath
           } else {
+            // console.log('key, value', key, value, parent)
             /* istanbul ignore next */
             throw new Error(`Couldn't not find any proper variablePath for ${path} and ${keyValue}`)
           }
@@ -219,6 +220,7 @@ var VueTeddyStore = (function (compositionApi) {
   }
 
   function set(obj, path, value, context) {
+    // console.log('set', obj, path)
     const steps = String(path)
       .replace(/\[/g, '.')
       .replace(/]/g, '')
@@ -232,7 +234,7 @@ var VueTeddyStore = (function (compositionApi) {
     const _set = (item, steps, val) => {
       const step = cleanStep(steps.shift()).replace(VARIABLE_PATH, resolveDynamicPath(context, item));
       if (steps.length > 0) {
-        const nextStep = steps[0].replace(VARIABLE_PATH, resolveDynamicPath(context, item));
+        const nextStep = steps[0].replace(VARIABLE_PATH, resolveDynamicPath(context, getProp(item, step)));
         // Next iteration is an array
         if (Number.isInteger(+nextStep)) {
           if (hasProp(item, step) && Array.isArray(getProp(item, step))) {
@@ -409,7 +411,7 @@ var VueTeddyStore = (function (compositionApi) {
     static getter(name, path, context) {
       context = context || this;
       return function get() {
-        return TeddyStore.get(name, path, context)
+        return TeddyStore.get.call(this, name, path, context)
       }
     }
 
@@ -430,7 +432,7 @@ var VueTeddyStore = (function (compositionApi) {
     static setter(name, path, context) {
       context = context || this;
       return function set(value) {
-        TeddyStore.set(name, path, value, context);
+        TeddyStore.set.call(this, name, path, value, context);
       }
     }
 
