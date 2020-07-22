@@ -1,6 +1,6 @@
 {
   "name": "vue-teddy-store",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "main": "dist/vue-teddy-store.esm.js",
   "module": "dist/vue-teddy-store.esm.js",
   "unpkg": "dist/vue-teddy-store.js",
