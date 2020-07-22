@@ -1,38 +1,45 @@
-import './install/vue-composition-api'
-import { computed, watch, ref, isRef } from '@vue/composition-api'
-
+import { isRef, ref, watch } from './api'
+import * as plugins from './plugins/index'
 import * as utils from './utils'
 
-import CachePlugin from './plugins/cache'
-import HistoryPlugin from './plugins/history'
-import SyncPlugin from './plugins/sync'
+function sortContexts(contexts) {
+  const instances = contexts.filter((ctx) => ctx && utils.isObject(ctx) && ctx instanceof TeddyStore)
+  const hosted = contexts.filter((ctx) => ctx && utils.isObject(ctx) && '$teddy' in ctx && ctx.$teddy instanceof TeddyStore)
+  const others = contexts.filter((ctx) => !instances.includes(ctx) && !hosted.includes(ctx))
+  return { instances, hosted, others }
+}
 
-function getInstance(...solutions) {
-  const instanceSolution = solutions.find((s) => s && s instanceof TeddyStore)
-  const contextSolution = solutions.find((s) => s && '$teddy' in s && s.$teddy instanceof TeddyStore)
-  const solution = instanceSolution || (contextSolution ? contextSolution.$teddy : undefined)
-  if (!solution) {
+function getInstance(...contexts) {
+  const { instances, hosted } = sortContexts(contexts)
+  const choices = [...instances, ...hosted.map((h) => h.$teddy)]
+  if (!instances.length === 0) {
     /* istanbul ignore next */
     throw new Error(`Couldn't find any proper instance!`)
   }
-  return solution
+  return choices[0]
+}
+
+function getContext(...contexts) {
+  const { hosted, others } = sortContexts(contexts)
+  const choices = [...hosted, ...others]
+  if (!choices.length === 0) {
+    /* istanbul ignore next */
+    throw new Error(`Couldn't find any proper context!`)
+  }
+  return choices[0]
 }
 
 export default class TeddyStore {
   constructor() {
     this._stores = {}
-    this._plugins = {
-      cache: CachePlugin,
-      history: HistoryPlugin,
-      sync: SyncPlugin,
-    }
+    this._plugins = plugins
   }
 
   add(name, store) {
     const others = utils.omit(store, ['state', 'methods', 'watchers'])
 
     this._stores[name] = {
-      state: TeddyStore.createState(store.state),
+      ...TeddyStore.createState(store.state),
       ...(store.methods || {}),
       ...others,
     }
@@ -112,7 +119,9 @@ export default class TeddyStore {
     context = context || this
     return function get() {
       const _instance = getInstance(this, context)
-      return utils.get(_instance, `stores.${name}.value.state.value.${path}`, undefined, context)
+      const _context = getContext(this, context)
+      const value = utils.get(_instance, `_stores.${name}.state.${path}`, undefined, _context)
+      return value
     }
   }
 
@@ -124,7 +133,8 @@ export default class TeddyStore {
     context = context || this
     return function set(value) {
       const _instance = getInstance(this, context)
-      utils.set(_instance.stores, `${name}.state.${path}`, value, context)
+      const _context = getContext(this, context)
+      utils.set(_instance, `_stores.${name}.state.${path}`, value, _context)
     }
   }
 
@@ -132,10 +142,23 @@ export default class TeddyStore {
     return TeddyStore.compute(name, path, this)
   }
 
-  static compute(name, path, context) {
+  static _compute(name, path, context) {
     context = context || this
     const get = TeddyStore.get(name, path, context)
     const set = TeddyStore.set(name, path, context)
-    return computed({ get, set })
+    return { get, set }
+  }
+
+  static compute(name, path, context) {
+    context = context || this
+
+    if (utils.isObject(path)) {
+      return Object.keys(path).reduce((acc, key) => {
+        acc[key] = TeddyStore._compute(name, path[key], context)
+        return acc
+      }, {})
+    } else {
+      return TeddyStore._compute(name, path, context)
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { reactive } from '@vue/composition-api'
+import { reactive } from '../api'
 import { prefix } from './cache'
 
 export default {
