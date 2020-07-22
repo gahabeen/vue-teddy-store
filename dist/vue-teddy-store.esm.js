@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.21
+  * vue-teddy-store v0.1.22
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -29,12 +29,6 @@ var cache = {
   },
 };
 
-var cache$1 = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  prefix: prefix,
-  'default': cache
-});
-
 var history = {
   handle({ store }) {
     store._history = reactive([]);
@@ -47,11 +41,6 @@ var history = {
     );
   },
 };
-
-var history$1 = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  'default': history
-});
 
 var sync = {
   handle({ name, store }) {
@@ -66,29 +55,62 @@ var sync = {
   },
 };
 
-var sync$1 = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  'default': sync
-});
-
 var plugins = /*#__PURE__*/Object.freeze({
   __proto__: null,
-  cache: cache$1,
-  history: history$1,
-  sync: sync$1
+  cache: cache,
+  history: history,
+  sync: sync
 });
 
 const VARIABLE_PATH = /({.+?})/gim;
+const VALUE_PATH = /('.+?')/gim;
 
-function resolvePath(instance) {
-  return (path) => {
-    path = path.slice(1, -1).trim();
-    const variablePath = get(instance, path);
-    if (['string', 'number'].includes(typeof variablePath)) {
-      return variablePath
-    } else {
-      /* istanbul ignore next */
-      throw new Error(`Couldn't not find any proper value for ${variablePath} at ${path}`)
+function resolveDynamicPath(context, parent) {
+  return (_path) => {
+    // const [path, modifier] = _path
+    const path = _path
+      .replace(/>/gim, '.')
+      .slice(1, -1)
+      .trim();
+      // .split('|')
+
+    // if pick by key:value
+    if (path.includes(':')) {
+      const keyValue = path
+        .split(':')
+        .filter(Boolean)
+        .map((p) => p.trim())
+        .map((el) => {
+          if (el.match(VALUE_PATH)) {
+            return el.slice(1, -1).trim()
+          } else {
+            return resolveDynamicPath(context, parent)(`{${el}}`)
+          }
+        });
+
+      if (keyValue.length === 2) {
+        const [key, value] = keyValue;
+        const variablePath = getKeyByKeyValue(parent, key, value);
+        if (variablePath !== undefined) {
+          return variablePath
+        } else {
+          /* istanbul ignore next */
+          throw new Error(`Couldn't not find any proper variablePath for ${path} and ${keyValue}`)
+        }
+      } else {
+        /* istanbul ignore next */
+        throw new Error(`Couldn't not find any proper keyValue for ${path}`)
+      }
+    }
+    // else only variable path
+    else {
+      const variablePath = get(context, path);
+      if (['string', 'number'].includes(typeof variablePath)) {
+        return variablePath
+      } else {
+        /* istanbul ignore next */
+        throw new Error(`Couldn't not find any proper value for ${variablePath} at ${path}`)
+      }
     }
   }
 }
@@ -148,23 +170,33 @@ function getProp(obj, key) {
   }
 }
 
-function get(obj, path, defaultValue, instance) {
+function getKeyByKeyValue(iterable, key, value) {
+  for (let prop of Object.keys(iterable)) {
+    if (isObject(iterable[prop]) && iterable[prop][key] == value) {
+      return prop
+    }
+  }
+}
+
+function get(obj, path, context) {
   const steps = String(path)
     .replace(/\[/g, '.')
     .replace(/]/g, '')
-    .replace(VARIABLE_PATH, resolvePath(instance))
+    .replace(VARIABLE_PATH, function(text) {
+      return text.replace(/\./gim, '>')
+    })
     .split('.');
 
-  function _get(_obj, _steps, _defaultValue) {
+  function _get(_obj, _steps) {
     if (_steps.length > 0) {
-      const step = _steps.shift();
+      const step = _steps.shift().replace(VARIABLE_PATH, resolveDynamicPath(context, _obj));
       // console.log('hasProp(_obj, step)', hasProp(_obj, step), _obj, step)
       if (hasProp(_obj, step)) {
         const stepValue = getProp(_obj, step);
         // console.log('stepValue', stepValue)
-        return _get(stepValue, _steps, _defaultValue)
+        return _get(stepValue, _steps)
       } else {
-        return _defaultValue
+        return
       }
     } else {
       return _obj
@@ -172,7 +204,7 @@ function get(obj, path, defaultValue, instance) {
     }
   }
 
-  return _get(obj, steps, defaultValue)
+  return _get(obj, steps)
 }
 
 function setProp(obj, key, value) {
@@ -188,19 +220,21 @@ function setProp(obj, key, value) {
   }
 }
 
-function set(obj, path, value, instance) {
+function set(obj, path, value, context) {
   const steps = String(path)
     .replace(/\[/g, '.')
     .replace(/]/g, '')
-    .replace(VARIABLE_PATH, resolvePath(instance))
+    .replace(VARIABLE_PATH, function(text) {
+      return text.replace(/\./gim, '>')
+    })
     .split('.');
 
   const cleanStep = (key) => key.replace(/^\^/, '');
 
   const _set = (item, steps, val) => {
-    const step = cleanStep(steps.shift());
+    const step = cleanStep(steps.shift()).replace(VARIABLE_PATH, resolveDynamicPath(context, item));
     if (steps.length > 0) {
-      const nextStep = steps[0];
+      const nextStep = steps[0].replace(VARIABLE_PATH, resolveDynamicPath(context, item));
       // Next iteration is an array
       if (Number.isInteger(+nextStep)) {
         if (hasProp(item, step) && Array.isArray(getProp(item, step))) {
@@ -286,6 +320,8 @@ class TeddyStore {
       ...others,
     };
 
+    this[name] = this._stores[name];
+
     const watchers = [];
     if (Array.isArray(store.watchers)) {
       watchers.push(...store.watchers);
@@ -313,6 +349,11 @@ class TeddyStore {
     }
 
     return this
+  }
+
+  remove(name) {
+    if (name in this) delete delete this[name];
+    if (name in this._stores) delete this._stores[name];
   }
 
   use(plugin = {}) {
@@ -362,7 +403,7 @@ class TeddyStore {
     return function get$1() {
       const _instance = getInstance(this, context);
       const _context = getContext(this, context);
-      const value = get(_instance, `_stores.${name}.state.${path}`, undefined, _context);
+      const value = get(_instance, `_stores.${name}.state.${path}`, _context);
       return value
     }
   }
