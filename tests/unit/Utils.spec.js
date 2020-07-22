@@ -14,12 +14,31 @@ describe('[Get] Utils.js', () => {
 
   it('should get a deep key on an object using a variable', () => {
     const obj = { pages: [{ title: 'Once uppon a time', elements: [{ type: 'button' }] }] }
-    expect(utils.get(obj, 'pages.{index}.title', undefined, { index: 0 })).toEqual(obj.pages[0].title)
+    expect(utils.get(obj, 'pages.{index}.title', { index: 0 })).toEqual(obj.pages[0].title)
   })
 
   it('should get a deep key on an object using a variable path', () => {
     const obj = { pages: [{ title: 'Once uppon a time', elements: [{ type: 'button' }] }] }
-    expect(utils.get(obj, 'pages.{index.of.page.one}.title', undefined, { index: { of: { page: { one: 0 } } } })).toEqual(obj.pages[0].title)
+    expect(utils.get(obj, 'pages.{index.of.page.one}.title', { index: { of: { page: { one: 0 } } } })).toEqual(obj.pages[0].title)
+  })
+
+  it('should get a deep key on a sub array using a key/value variable path', () => {
+    const obj = { pages: [{ slug: 'once', title: 'Once uppon a time', elements: [{ type: 'button' }] }] }
+    expect(utils.get(obj, `pages.{'slug':slug}.title`, { slug: 'once' })).toEqual(obj.pages[0].title)
+  })
+
+  it('should get a deep key on a sub array using a key/value variables path', () => {
+    const obj = { pages: [{ slug: 'once', title: 'Once uppon a time', elements: [{ type: 'button' }] }] }
+    expect(utils.get(obj, `pages.{key:slug}.title`, { key: 'slug', slug: 'once' })).toEqual(obj.pages[0].title)
+  })
+
+  it('should get a deep key on a sub object using a key/value variables path', () => {
+    const obj = {
+      pages: {
+        123: { id: 123, slug: 'once', title: 'Once uppon a time', elements: [{ type: 'button' }] },
+      },
+    }
+    expect(utils.get(obj, `pages.{key:slug}.title`, { key: 'slug', slug: 'once' })).toEqual(obj.pages['123'].title)
   })
 })
 

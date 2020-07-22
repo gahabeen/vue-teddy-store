@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import Vue from 'vue'
 import TeddyStore from '../../src/index'
 import flushPromises from 'flush-promises'
+
 Vue.use(VueCompositionApi)
 
 const store = new TeddyStore()
@@ -200,161 +201,150 @@ describe('TeddyStore.js', () => {
     expect(hit).toEqual(2)
   })
 
-  // #bug
-  // it(`[static compute(<name>, <path>)] should provide a computed property to get/set a simple value `, () => {
-  //   const state = ref({
-  //     pages: [{ title: 'Once uppon a time' }],
-  //   })
+  it(`[static compute(<name>, <path>)] should provide a computed property to get/set a simple value `, () => {
+    const state = ref({
+      pages: [{ title: 'Once uppon a time' }],
+    })
 
-  //   Vue.use(store.add('pages', { state }))
+    Vue.use(store.add('pages', { state }))
 
-  //   const wrapper = mount({
-  //     template: `<div></div>`,
-  //     setup() {
-  //       const pages0 = TeddyStore.compute('pages', 'page')
-  //       return { pages0 }
-  //     },
-  //   })
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup() {
+        const pages0 = computed(TeddyStore.compute('pages', 'pages.0'))
+        return { pages0 }
+      },
+    })
 
-  //   wrapper.vm.pages0 = { title: 'New title' }
+    wrapper.vm.pages0 = { title: 'New title' }
 
-  //   expect(wrapper.vm.pages0.title).toMatch('New title')
-  //   expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
-  // })
+    expect(wrapper.vm.pages0.title).toMatch('New title')
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
+  })
 
-  // #bug
-  // it(`[compute(<name>, <path>)] should provide a computed property to get/set a simple value`, async () => {
-  //   Vue.use(
-  //     store.add('pages', {
-  //       state: ref({
-  //         pages: [{ title: 'Once uppon a time' }],
-  //       }),
-  //     })
-  //   )
+  it(`[compute(<name>, <path>)] should provide a computed property to get/set a simple value`, async () => {
+    Vue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
 
-  //   await flushPromises()
+    await flushPromises()
 
-  //   const wrapper = mount({
-  //     template: `<div></div>`,
-  //     setup() {
-  //       let pages0 = store.compute('pages', 'pages.0')
-  //       pages0 = { title: 'New title' }
-  //       return { pages0 }
-  //     },
-  //   })
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup() {
+        let pages0 = computed(store.compute('pages', 'pages.0'))
+        return { pages0 }
+      },
+    })
 
-  //   expect(wrapper.vm.pages0.title).toMatch('New title')
-  //   expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
-  // })
+    wrapper.vm.pages0 = { title: 'New title' }
+    expect(wrapper.vm.pages0.title).toMatch('New title')
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
+  })
 
-  // #bug
-  // it(`[static get(<name>, <path>)] should provide a getter for a simple value`, () => {
-  //   Vue.use(
-  //     store.add('pages', {
-  //       state: ref({
-  //         pages: [{ title: 'Once uppon a time' }],
-  //       }),
-  //     })
-  //   )
+  it(`[static get(<name>, <path>)] should provide a getter for a simple value`, () => {
+    Vue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
 
-  //   const wrapper = mount({
-  //     template: `<div></div>`,
-  //     setup() {
-  //       let pages0 = store.compute('pages', 'pages.0')
-  //       return { pages0 }
-  //     },
-  //   })
-  //   expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
-  //   expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Once uppon a time')
-  // })
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup() {
+        let pages0 = computed(store.compute('pages', 'pages.0'))
+        return { pages0 }
+      },
+    })
+    expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Once uppon a time')
+  })
 
-  // #bug
-  // it(`[get(<name>, <path>)] should provide a getter for a simple value`, async () => {
-  //   const state = ref({
-  //     pages: [{ title: 'Once uppon a time' }],
-  //   })
+  it(`[get(<name>, <path>)] should provide a getter for a simple value`, async () => {
+    const state = ref({
+      pages: [{ title: 'Once uppon a time' }],
+    })
 
-  //   Vue.use(
-  //     store.add('pages', {
-  //       state,
-  //     })
-  //   )
+    Vue.use(
+      store.add('pages', {
+        state,
+      })
+    )
 
-  //   const wrapper = mount({
-  //     template: `<div></div>`,
-  //     setup() {
-  //       let pages0 = store.compute('pages', 'pages.0')
-  //       return { pages0 }
-  //     },
-  //   })
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup() {
+        let pages0 = computed(store.compute('pages', 'pages.0'))
+        return { pages0 }
+      },
+    })
 
-  //   await flushPromises()
-  //   expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
-  //   expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Once uppon a time')
-  // })
+    await flushPromises()
+    expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Once uppon a time')
+  })
 
-  // #bug
-  // it(`[static set(<name>, <path>)] should provide a setter for a simple value`, () => {
-  //   Vue.use(
-  //     store.add('pages', {
-  //       state: ref({
-  //         pages: [{ title: 'Once uppon a time' }],
-  //       }),
-  //     })
-  //   )
+  it(`[static set(<name>, <path>)] should provide a setter for a simple value`, () => {
+    Vue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
 
-  //   const wrapper = mount({
-  //     template: `<div></div>`,
-  //     setup() {
-  //       const pages0 = computed({
-  //         get() {
-  //           return this.$teddy.stores.pages.state.value.pages[0]
-  //         },
-  //         set: TeddyStore.set('pages', 'pages.0'),
-  //       })
-  //       return { pages0 }
-  //     },
-  //   })
-  //   wrapper.vm.pages0 = { title: 'Brand new title' }
-  //   expect(wrapper.vm.pages0.title).toEqual('Brand new title')
-  //   expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toEqual('Brand new title')
-  // })
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup() {
+        const pages0 = computed({
+          get() {
+            return this.$teddy.stores.pages.state.value.pages[0]
+          },
+          set: TeddyStore.set('pages', 'pages.0'),
+        })
+        return { pages0 }
+      },
+    })
+    wrapper.vm.pages0 = { title: 'Brand new title' }
+    expect(wrapper.vm.pages0.title).toEqual('Brand new title')
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toEqual('Brand new title')
+  })
 
-  // #bug
-  // it(`[set(<name>, <path>)] should provide a setter for a simple value`, async () => {
-  //   const state = ref({
-  //     pages: [{ title: 'Once uppon a time' }],
-  //   })
+  it(`[set(<name>, <path>)] should provide a setter for a simple value`, async () => {
+    const state = ref({
+      pages: [{ title: 'Once uppon a time' }],
+    })
 
-  //   Vue.use(
-  //     store.add('pages', {
-  //       state,
-  //     })
-  //   )
+    Vue.use(store.add('pages', { state }))
 
-  //   await flushPromises()
+    await flushPromises()
 
-  //   const wrapper = mount({
-  //     template: `<div></div>`,
-  //     setup() {
-  //       let pages0 = computed({
-  //         get() {
-  //           return store.stores.pages.state.value.pages[0]
-  //         },
-  //         // set(value) {
-  //         //   store.stores.pages.state.value.pages[0] = value
-  //         // },
-  //         set: TeddyStore.set('pages', 'pages.0'),
-  //       })
-  //       pages0 = { title: 'Brand new title' }
-  //       return { pages0 }
-  //     },
-  //   })
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup() {
+        let pages0 = computed({
+          get() {
+            return store.stores.pages.state.value.pages[0]
+          },
+          // set(value) {
+          //   store.stores.pages.state.value.pages[0] = value
+          // },
+          set: store.set('pages', 'pages.0'),
+        })
+        return { pages0 }
+      },
+    })
 
-  //   await flushPromises()
-  //   expect(wrapper.vm.pages0.title).toEqual('Brand new title')
-  //   expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toEqual('Brand new title')
-  // })
+    wrapper.vm.pages0 = { title: 'Brand new title' }
+    expect(wrapper.vm.pages0.title).toEqual('Brand new title')
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toEqual('Brand new title')
+  })
 
   it(`[use(<plugin>)] should allow watching mutations via a plugin`, () => {
     Vue.use(
@@ -427,5 +417,29 @@ describe('TeddyStore.js', () => {
     })
     await flushPromises()
     expect(wrapper.text()).toEqual('Ted Bear')
+  })
+
+  it(`should have its stores also availabe as root properties`, async () => {
+    Vue.use(
+      store
+        .add('user', {
+          state: {
+            firstName: 'Teddy',
+            lastName: 'Bear',
+          },
+        })
+        .add('auth', {
+          state: {
+            token: '123',
+          },
+        })
+    )
+
+    const wrapper = mount({
+      template: `<div></div>`,
+    })
+    await flushPromises()
+    expect(wrapper.vm.$teddy.user).toEqual(wrapper.vm.$teddy.stores.user)
+    expect(wrapper.vm.$teddy.auth).toEqual(wrapper.vm.$teddy.stores.auth)
   })
 })
