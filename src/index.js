@@ -44,6 +44,8 @@ export default class TeddyStore {
       ...others,
     }
 
+    this[name] = this._stores[name]
+
     const watchers = []
     if (Array.isArray(store.watchers)) {
       watchers.push(...store.watchers)
@@ -71,6 +73,11 @@ export default class TeddyStore {
     }
 
     return this
+  }
+
+  remove(name) {
+    if (name in this) delete delete this[name]
+    if (name in this._stores) delete this._stores[name]
   }
 
   use(plugin = {}) {
@@ -120,7 +127,7 @@ export default class TeddyStore {
     return function get() {
       const _instance = getInstance(this, context)
       const _context = getContext(this, context)
-      const value = utils.get(_instance, `_stores.${name}.state.${path}`, undefined, _context)
+      const value = utils.get(_instance, `_stores.${name}.state.${path}`, _context)
       return value
     }
   }
