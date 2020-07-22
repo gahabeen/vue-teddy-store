@@ -135,7 +135,7 @@ export default class TeddyStore {
   static getter(name, path, context) {
     context = context || this
     return function get() {
-      return TeddyStore.get(name, path, context)
+      return TeddyStore.get.call(this, name, path, context)
     }
   }
 
@@ -156,7 +156,7 @@ export default class TeddyStore {
   static setter(name, path, context) {
     context = context || this
     return function set(value) {
-      TeddyStore.set(name, path, value, context)
+      TeddyStore.set.call(this, name, path, value, context)
     }
   }
 

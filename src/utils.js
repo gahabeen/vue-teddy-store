@@ -30,6 +30,7 @@ export function resolveDynamicPath(context, parent) {
         if (variablePath !== undefined) {
           return variablePath
         } else {
+          // console.log('key, value', key, value, parent)
           /* istanbul ignore next */
           throw new Error(`Couldn't not find any proper variablePath for ${path} and ${keyValue}`)
         }
@@ -154,6 +155,7 @@ export function setProp(obj, key, value) {
 }
 
 export function set(obj, path, value, context) {
+  // console.log('set', obj, path)
   const steps = String(path)
     .replace(/\[/g, '.')
     .replace(/]/g, '')
@@ -167,7 +169,7 @@ export function set(obj, path, value, context) {
   const _set = (item, steps, val) => {
     const step = cleanStep(steps.shift()).replace(VARIABLE_PATH, resolveDynamicPath(context, item))
     if (steps.length > 0) {
-      const nextStep = steps[0].replace(VARIABLE_PATH, resolveDynamicPath(context, item))
+      const nextStep = steps[0].replace(VARIABLE_PATH, resolveDynamicPath(context, getProp(item, step)))
       // Next iteration is an array
       if (Number.isInteger(+nextStep)) {
         if (hasProp(item, step) && Array.isArray(getProp(item, step))) {
