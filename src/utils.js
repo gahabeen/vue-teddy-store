@@ -8,7 +8,7 @@ export function resolveDynamicPath(context, parent) {
       .replace(/>/gim, '.')
       .slice(1, -1)
       .trim()
-      // .split('|')
+    // .split('|')
 
     // if pick by key:value
     if (path.includes(':')) {
@@ -147,9 +147,6 @@ export function setProp(obj, key, value) {
   if (isComputed(obj) && key in obj.value) {
     obj.value[key] = value
     return obj.value[key]
-    // } else if (Array.isArray(obj)) {
-    //   obj.splice(key, 1, value)
-    //   return obj[key]
   } else {
     obj[key] = value
     return obj[key]

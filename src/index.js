@@ -123,25 +123,40 @@ export default class TeddyStore {
   }
 
   static get(name, path, context) {
+    const _instance = getInstance(this, context)
+    const _context = getContext(this, context)
+    return utils.get(_instance, `_stores.${name}.state.${path}`, _context)
+  }
+
+  getter(name, path) {
+    return TeddyStore.getter(name, path, this)
+  }
+
+  static getter(name, path, context) {
     context = context || this
     return function get() {
-      const _instance = getInstance(this, context)
-      const _context = getContext(this, context)
-      const value = utils.get(_instance, `_stores.${name}.state.${path}`, _context)
-      return value
+      return TeddyStore.get(name, path, context)
     }
   }
 
-  set(name, path) {
-    return TeddyStore.set(name, path, this)
+  set(name, path, value) {
+    return TeddyStore.set(name, path, value, this)
   }
 
-  static set(name, path, context) {
+  static set(name, path, value, context) {
+    const _instance = getInstance(this, context)
+    const _context = getContext(this, context)
+    utils.set(_instance, `_stores.${name}.state.${path}`, value, _context)
+  }
+
+  setter(name, path) {
+    return TeddyStore.setter(name, path, this)
+  }
+
+  static setter(name, path, context) {
     context = context || this
     return function set(value) {
-      const _instance = getInstance(this, context)
-      const _context = getContext(this, context)
-      utils.set(_instance, `_stores.${name}.state.${path}`, value, _context)
+      TeddyStore.set(name, path, value, context)
     }
   }
 
@@ -151,8 +166,8 @@ export default class TeddyStore {
 
   static _compute(name, path, context) {
     context = context || this
-    const get = TeddyStore.get(name, path, context)
-    const set = TeddyStore.set(name, path, context)
+    const get = TeddyStore.getter(name, path, context)
+    const set = TeddyStore.setter(name, path, context)
     return { get, set }
   }
 
