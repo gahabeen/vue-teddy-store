@@ -246,6 +246,27 @@ describe('TeddyStore.js', () => {
     expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
   })
 
+  it(`[compute(<name>, <path>)] should provide a computed property to get/set a value with a variable`, async () => {
+    Vue.use(
+      store.add('agents', {
+        state: ref({
+          agents: [{ name: 'Joe', title: 'seller' }],
+        }),
+      })
+    )
+
+    const wrapper = mount({
+      template: `<div></div>`,
+      data: () => ({ name: 'Joe' }),
+      computed: {
+        pages0: store.compute('agents', `agents.{'name':name}`),
+      },
+    })
+
+    wrapper.vm.pages0.title = 'craftsman'
+    expect(wrapper.vm.$teddy.stores.agents.state.value.agents[0].title).toMatch('craftsman')
+  })
+
   it(`[static get(<name>, <path>)] should get a value at path`, () => {
     Vue.use(
       store.add('pages', {
