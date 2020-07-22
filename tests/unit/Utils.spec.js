@@ -78,4 +78,10 @@ describe('[Set] Utils.js', () => {
     utils.set(obj, 'car.^0.details', { color: 'blue' })
     expect(obj.car['0'].details).toEqual({ color: 'blue' })
   })
+
+  it('should set a prop in an array item on an object', () => {
+    const obj = { name: 'John', age: 30, car: null }
+    utils.set(obj, 'car.0.color', 'blue')
+    expect(obj.car[0].color).toEqual('blue')
+  })
 })

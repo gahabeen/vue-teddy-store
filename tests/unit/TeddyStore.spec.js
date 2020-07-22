@@ -210,8 +210,8 @@ describe('TeddyStore.js', () => {
 
     const wrapper = mount({
       template: `<div></div>`,
-      setup() {
-        const pages0 = computed(TeddyStore.compute('pages', 'pages.0'))
+      setup(_, { root }) {
+        const pages0 = computed(TeddyStore.compute('pages', 'pages.0', root))
         return { pages0 }
       },
     })
@@ -246,7 +246,60 @@ describe('TeddyStore.js', () => {
     expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
   })
 
-  it(`[static get(<name>, <path>)] should provide a getter for a simple value`, () => {
+  it(`[static get(<name>, <path>)] should get a value at path`, () => {
+    Vue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
+
+    mount({
+      template: `<div></div>`,
+      setup(_, { root }) {
+        expect(TeddyStore.get('pages', 'pages.0.title', root)).toMatch('Once uppon a time')
+      },
+    })
+  })
+
+  it(`[get(<name>, <path>)] should get a value at path`, () => {
+    Vue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
+
+    mount({
+      template: `<div></div>`,
+      setup() {
+        expect(store.get('pages', 'pages.0.title')).toMatch('Once uppon a time')
+      },
+    })
+  })
+
+  it(`[static set(<name>, <path>)] should set a value at path`, () => {
+    Vue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
+
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup(_, { root }) {
+        TeddyStore.set('pages', 'pages.0.title', 'Another title', root)
+      },
+    })
+
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Another title')
+  })
+
+  it(`[set(<name>, <path>)] should set a value at path`, () => {
     Vue.use(
       store.add('pages', {
         state: ref({
@@ -258,15 +311,35 @@ describe('TeddyStore.js', () => {
     const wrapper = mount({
       template: `<div></div>`,
       setup() {
-        let pages0 = computed(store.compute('pages', 'pages.0'))
+        store.set('pages', 'pages.0.title', 'Another title')
+      },
+    })
+
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Another title')
+  })
+
+  it(`[static getter(<name>, <path>)] should provide a getter for a simple value`, () => {
+    Vue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
+
+    const wrapper = mount({
+      template: `<div></div>`,
+      setup(_, { root }) {
+        let pages0 = computed(TeddyStore.getter('pages', 'pages.0', root))
         return { pages0 }
       },
     })
+
     expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
     expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Once uppon a time')
   })
 
-  it(`[get(<name>, <path>)] should provide a getter for a simple value`, async () => {
+  it(`[getter(<name>, <path>)] should provide a getter for a simple value`, async () => {
     const state = ref({
       pages: [{ title: 'Once uppon a time' }],
     })
@@ -280,7 +353,7 @@ describe('TeddyStore.js', () => {
     const wrapper = mount({
       template: `<div></div>`,
       setup() {
-        let pages0 = computed(store.compute('pages', 'pages.0'))
+        let pages0 = computed(store.getter('pages', 'pages.0'))
         return { pages0 }
       },
     })
@@ -290,7 +363,7 @@ describe('TeddyStore.js', () => {
     expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Once uppon a time')
   })
 
-  it(`[static set(<name>, <path>)] should provide a setter for a simple value`, () => {
+  it(`[static setter(<name>, <path>)] should provide a setter for a simple value`, () => {
     Vue.use(
       store.add('pages', {
         state: ref({
@@ -301,12 +374,12 @@ describe('TeddyStore.js', () => {
 
     const wrapper = mount({
       template: `<div></div>`,
-      setup() {
+      setup(_, { root }) {
         const pages0 = computed({
           get() {
             return this.$teddy.stores.pages.state.value.pages[0]
           },
-          set: TeddyStore.set('pages', 'pages.0'),
+          set: TeddyStore.setter('pages', 'pages.0', root),
         })
         return { pages0 }
       },
@@ -335,7 +408,7 @@ describe('TeddyStore.js', () => {
           // set(value) {
           //   store.stores.pages.state.value.pages[0] = value
           // },
-          set: store.set('pages', 'pages.0'),
+          set: store.setter('pages', 'pages.0'),
         })
         return { pages0 }
       },
