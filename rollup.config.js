@@ -53,6 +53,7 @@ function createEntry(
     output: {
       banner,
       globals: {
+        'object-string-path': 'objectStringPath',
         vue: 'Vue',
         '@vue/composition-api': 'vueCompositionApi',
       },

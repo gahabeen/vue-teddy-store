@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "@vue/composition-api": "^1.0.0-beta.6",
+    "object-string-path": "^0.1.1",
     "vue": "^2.6.11"
   },
   "scripts": {

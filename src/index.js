@@ -1,10 +1,12 @@
 import { isRef, ref, watch } from './api'
+import { isObject } from 'object-string-path'
 import * as plugins from './plugins/index'
 import * as utils from './utils'
+import * as objectAccess from './object-access'
 
 function sortContexts(contexts) {
-  const instances = contexts.filter((ctx) => ctx && utils.isObject(ctx) && ctx instanceof TeddyStore)
-  const hosted = contexts.filter((ctx) => ctx && utils.isObject(ctx) && '$teddy' in ctx && ctx.$teddy instanceof TeddyStore)
+  const instances = contexts.filter((ctx) => ctx && isObject(ctx) && ctx instanceof TeddyStore)
+  const hosted = contexts.filter((ctx) => ctx && isObject(ctx) && '$teddy' in ctx && ctx.$teddy instanceof TeddyStore)
   const others = contexts.filter((ctx) => !instances.includes(ctx) && !hosted.includes(ctx))
   return { instances, hosted, others }
 }
@@ -59,10 +61,10 @@ export default class TeddyStore {
       } else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
         const { handler, path, paths = [], ...options } = watcher
         if (path) {
-          watch(() => utils.get(this._stores[name].state.value, path), handler, { deep: true, ...options })
+          watch(() => objectAccess.get(this._stores[name].state.value, path), handler, { deep: true, ...options })
         } else if (paths.length > 0) {
           watch(
-            paths.map((p) => () => utils.get(this._stores[name].state.value, p)),
+            paths.map((p) => () => objectAccess.get(this._stores[name].state.value, p)),
             handler,
             { deep: true, ...options }
           )
@@ -118,6 +120,16 @@ export default class TeddyStore {
     }
   }
 
+  has(name, path) {
+    return TeddyStore.has(name, path, this)
+  }
+
+  static has(name, path, context) {
+    const _instance = getInstance(this, context)
+    const _context = getContext(this, context)
+    return objectAccess.has(_instance, `_stores.${name}.state.${path}`, _context)
+  }
+
   get(name, path) {
     return TeddyStore.get(name, path, this)
   }
@@ -125,7 +137,7 @@ export default class TeddyStore {
   static get(name, path, context) {
     const _instance = getInstance(this, context)
     const _context = getContext(this, context)
-    return utils.get(_instance, `_stores.${name}.state.${path}`, _context)
+    return objectAccess.get(_instance, `_stores.${name}.state.${path}`, _context)
   }
 
   getter(name, path) {
@@ -146,7 +158,7 @@ export default class TeddyStore {
   static set(name, path, value, context) {
     const _instance = getInstance(this, context)
     const _context = getContext(this, context)
-    utils.set(_instance, `_stores.${name}.state.${path}`, value, _context)
+    objectAccess.set(_instance, `_stores.${name}.state.${path}`, value, _context)
   }
 
   setter(name, path) {
@@ -174,7 +186,7 @@ export default class TeddyStore {
   static compute(name, path, context) {
     context = context || this
 
-    if (utils.isObject(path)) {
+    if (isObject(path)) {
       return Object.keys(path).reduce((acc, key) => {
         acc[key] = TeddyStore._compute(name, path[key], context)
         return acc

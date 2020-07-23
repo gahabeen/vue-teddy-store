@@ -259,7 +259,7 @@ describe('TeddyStore.js', () => {
       template: `<div></div>`,
       data: () => ({ name: 'Joe' }),
       computed: {
-        pages0: store.compute('agents', `agents.{'name':name}`),
+        pages0: store.compute('agents', `agents.name={name}`),
       },
     })
 

@@ -1,9 +1,9 @@
 /*!
-  * vue-teddy-store v0.1.24
+  * vue-teddy-store v0.1.25
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (compositionApi) {
+var VueTeddyStore = (function (compositionApi, objectStringPath) {
   'use strict';
 
   const prefix = (name) => `teddy:store:${name}`;
@@ -63,210 +63,13 @@ var VueTeddyStore = (function (compositionApi) {
     sync: sync
   });
 
-  const VARIABLE_PATH = /({.+?})/gim;
-  const VALUE_PATH = /('.+?')/gim;
-
-  function resolveDynamicPath(context, parent) {
-    return (_path) => {
-      // const [path, modifier] = _path
-      const path = _path
-        .replace(/>/gim, '.')
-        .slice(1, -1)
-        .trim();
-      // .split('|')
-
-      // if pick by key:value
-      if (path.includes(':')) {
-        const keyValue = path
-          .split(':')
-          .filter(Boolean)
-          .map((p) => p.trim())
-          .map((el) => {
-            if (el.match(VALUE_PATH)) {
-              return el.slice(1, -1).trim()
-            } else {
-              return resolveDynamicPath(context, parent)(`{${el}}`)
-            }
-          });
-
-        if (keyValue.length === 2) {
-          const [key, value] = keyValue;
-          const variablePath = getKeyByKeyValue(parent, key, value);
-          if (variablePath !== undefined) {
-            return variablePath
-          } else {
-            // console.log('key, value', key, value, parent)
-            /* istanbul ignore next */
-            throw new Error(`Couldn't not find any proper variablePath for ${path} and ${keyValue}`)
-          }
-        } else {
-          /* istanbul ignore next */
-          throw new Error(`Couldn't not find any proper keyValue for ${path}`)
-        }
-      }
-      // else only variable path
-      else {
-        const variablePath = get(context, path);
-        if (['string', 'number'].includes(typeof variablePath)) {
-          return variablePath
-        } else {
-          /* istanbul ignore next */
-          throw new Error(`Couldn't not find any proper value for ${variablePath} at ${path}`)
-        }
-      }
-    }
-  }
-
-  function isObject(o) {
-    let ctor, prot;
-
-    function _isObject(o) {
-      return Object.prototype.toString.call(o) === '[object Object]'
-    }
-
-    if (_isObject(o) === false) return false
-    // If has modified constructor
-    ctor = o.constructor;
-    if (ctor === undefined) return true
-    // If has modified prototype
-    prot = ctor.prototype;
-    if (_isObject(prot) === false) return false
-
-    // Most likely a plain Object
-    return true
-  }
-
   function isComputed(obj) {
-    if (!isObject(obj) || (isObject(obj) && !('value' in obj))) {
+    if (!objectStringPath.isObject(obj) || (objectStringPath.isObject(obj) && !('value' in obj))) {
       return false
     } else {
       const desc = Object.getOwnPropertyDescriptor(obj, 'value');
       return typeof desc.get === 'function' // && typeof desc.set === 'function'
     }
-  }
-
-  function hasProp(obj, key) {
-    if (!isObject(obj) && !Array.isArray(obj)) {
-      return false
-    } else if (isComputed(obj) && key in obj.value) {
-      return true
-    } else if (key in obj) {
-      return true
-    } else {
-      return false
-    }
-  }
-
-  function getProp(obj, key) {
-    if (!isObject(obj) && !Array.isArray(obj)) return
-    if (isComputed(obj)) {
-      if (key && key in obj.value) {
-        return obj.value[key]
-      } else {
-        return obj.value
-      }
-    } else if (key && key in obj) {
-      return obj[key]
-    } else {
-      return obj
-    }
-  }
-
-  function getKeyByKeyValue(iterable, key, value) {
-    for (let prop of Object.keys(iterable)) {
-      if (isObject(iterable[prop]) && iterable[prop][key] == value) {
-        return prop
-      }
-    }
-  }
-
-  function get(obj, path, context) {
-    const steps = String(path)
-      .replace(/\[/g, '.')
-      .replace(/]/g, '')
-      .replace(VARIABLE_PATH, function(text) {
-        return text.replace(/\./gim, '>')
-      })
-      .split('.');
-
-    function _get(_obj, _steps) {
-      if (_steps.length > 0) {
-        const step = _steps.shift().replace(VARIABLE_PATH, resolveDynamicPath(context, _obj));
-        // console.log('hasProp(_obj, step)', hasProp(_obj, step), _obj, step)
-        if (hasProp(_obj, step)) {
-          const stepValue = getProp(_obj, step);
-          // console.log('stepValue', stepValue)
-          return _get(stepValue, _steps)
-        } else {
-          return
-        }
-      } else {
-        return _obj
-        // return getProp(_obj)
-      }
-    }
-
-    return _get(obj, steps)
-  }
-
-  function setProp(obj, key, value) {
-    if (isComputed(obj) && key in obj.value) {
-      obj.value[key] = value;
-      return obj.value[key]
-    } else {
-      obj[key] = value;
-      return obj[key]
-    }
-  }
-
-  function set(obj, path, value, context) {
-    // console.log('set', obj, path)
-    const steps = String(path)
-      .replace(/\[/g, '.')
-      .replace(/]/g, '')
-      .replace(VARIABLE_PATH, function(text) {
-        return text.replace(/\./gim, '>')
-      })
-      .split('.');
-
-    const cleanStep = (key) => key.replace(/^\^/, '');
-
-    const _set = (item, steps, val) => {
-      const step = cleanStep(steps.shift()).replace(VARIABLE_PATH, resolveDynamicPath(context, item));
-      if (steps.length > 0) {
-        const nextStep = steps[0].replace(VARIABLE_PATH, resolveDynamicPath(context, getProp(item, step)));
-        // Next iteration is an array
-        if (Number.isInteger(+nextStep)) {
-          if (hasProp(item, step) && Array.isArray(getProp(item, step))) {
-            _set(getProp(item, step), steps, val);
-          } else {
-            return _set(setProp(item, step, []), steps, val)
-          }
-        } // Else it's an object
-        else {
-          if (hasProp(item, step) && isObject(getProp(item, step))) {
-            _set(getProp(item, step), steps, val);
-          } else {
-            return _set(setProp(item, step, {}), steps, val)
-          }
-        }
-      } else {
-        setProp(item, step, val);
-      }
-    };
-
-    if (steps.length > 0) {
-      _set(obj, steps, value);
-    } else {
-      // hmm
-      if (obj.value) {
-        obj.value = value;
-      } else {
-        obj = value;
-      }
-    }
-
-    return obj
   }
 
   function omit(obj, keys = []) {
@@ -278,9 +81,87 @@ var VueTeddyStore = (function (compositionApi) {
     }, {})
   }
 
+  function setProp(obj, key, value) {
+    if (objectStringPath.isValidKey(key) && (objectStringPath.isObject(obj) || Array.isArray(obj))) {
+      if (isComputed(obj) && key in obj.value) {
+        obj.value[key] = value;
+        return obj.value[key]
+      } else {
+        obj[key] = value;
+        return obj[key]
+      }
+    } else if (obj && key == undefined) {
+      if (isComputed(obj)) {
+        obj.value = value;
+      } else if (objectStringPath.isObject(value)) {
+        Object.assign(obj, value);
+      } else {
+        obj = value;
+      }
+      return obj
+    } else {
+      console.log(`Couldn't not set ${key}`);
+      return
+    }
+  }
+
+  function getProp(obj, key) {
+    if (objectStringPath.isValidKey(key)) {
+      if (isComputed(obj)) {
+        if (key in obj.value) {
+          return obj.value[key]
+        } else {
+          return obj.value
+        }
+      } else if (objectStringPath.isObject(obj) || Array.isArray(obj)) {
+        return obj[key]
+      }
+    } else if (obj && key === undefined) {
+      if (isComputed(obj)) {
+        return obj.value
+      } else {
+        return obj
+      }
+    } else {
+      return // error
+    }
+  }
+
+  function hasProp(obj, key) {
+    if (!objectStringPath.isObject(obj) && !Array.isArray(obj)) {
+      return false
+    } else if (objectStringPath.isValidKey(key)) {
+      // Test if computed AND if key we're looking for is in .value,
+      // if not continue to check if we're not looking for the key "value" maybe
+      if (isComputed(obj) && key in obj.value) {
+        return true
+      } else if (key in obj) {
+        return true
+      }
+    } else {
+      return false
+    }
+  }
+
+  const set = objectStringPath.makeSet({
+    setProp,
+    getProp,
+    hasProp,
+  });
+
+  const has = objectStringPath.makeHas({
+    getProp,
+    hasProp,
+  });
+
+  const get = objectStringPath.makeGet({
+    getProp,
+    hasProp,
+  });
+
   function sortContexts(contexts) {
-    const instances = contexts.filter((ctx) => ctx && isObject(ctx) && ctx instanceof TeddyStore);
-    const hosted = contexts.filter((ctx) => ctx && isObject(ctx) && '$teddy' in ctx && ctx.$teddy instanceof TeddyStore);
+    const instances = contexts.filter((ctx) => ctx && objectStringPath.isObject(ctx) && ctx instanceof TeddyStore);
+    const hosted = contexts.filter((ctx) => ctx && objectStringPath.isObject(ctx) && '$teddy' in ctx && ctx.$teddy instanceof TeddyStore);
     const others = contexts.filter((ctx) => !instances.includes(ctx) && !hosted.includes(ctx));
     return { instances, hosted, others }
   }
@@ -394,6 +275,16 @@ var VueTeddyStore = (function (compositionApi) {
       }
     }
 
+    has(name, path) {
+      return TeddyStore.has(name, path, this)
+    }
+
+    static has(name, path, context) {
+      const _instance = getInstance(this, context);
+      const _context = getContext(this, context);
+      return has(_instance, `_stores.${name}.state.${path}`, _context)
+    }
+
     get(name, path) {
       return TeddyStore.get(name, path, this)
     }
@@ -450,7 +341,7 @@ var VueTeddyStore = (function (compositionApi) {
     static compute(name, path, context) {
       context = context || this;
 
-      if (isObject(path)) {
+      if (objectStringPath.isObject(path)) {
         return Object.keys(path).reduce((acc, key) => {
           acc[key] = TeddyStore._compute(name, path[key], context);
           return acc
@@ -463,4 +354,4 @@ var VueTeddyStore = (function (compositionApi) {
 
   return TeddyStore;
 
-}(vueCompositionApi));
+}(vueCompositionApi, objectStringPath));
