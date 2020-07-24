@@ -44,6 +44,44 @@ describe('TeddyStore.js', () => {
     expect(wrapper.vm.state.value.pages[0].title).toMatch('NewName')
   })
 
+  it('[createGetters(<getters>)] should make sure getters are computed properties (when they arnt)', () => {
+    const state = {
+      pages: [{ title: 'Once uppon a time' }],
+    }
+
+    const getters = {
+      pageTitles: () => state.pages.map((page) => page.title),
+    }
+
+    Vue.use(store.add('pages', { state, getters }))
+
+    const wrapper = mount({
+      template: `<div></div>`,
+    })
+
+    wrapper.vm.$teddy.set('pages', 'pages.0.title', 'Once another time')
+    expect(wrapper.vm.$teddy.stores.pages.pageTitles.value).toEqual(['Once another time'])
+  })
+
+  it('[createGetters(<getters>)] should make sure getters are computed properties (when they are)', () => {
+    const state = {
+      pages: [{ title: 'Once uppon a time' }],
+    }
+
+    const getters = {
+      pageTitles: computed(() => state.pages.map((page) => page.title)),
+    }
+
+    Vue.use(store.add('pages', { state, getters }))
+
+    const wrapper = mount({
+      template: `<div></div>`,
+    })
+
+    wrapper.vm.$teddy.set('pages', 'pages.0.title', 'Once another time')
+    expect(wrapper.vm.$teddy.stores.pages.pageTitles.value).toEqual(['Once another time'])
+  })
+
   it(`[add(<name>, <store>)] should provide a computed { state } as a computed value for a module`, async () => {
     Vue.use(
       store.add('pages', {
@@ -486,32 +524,32 @@ describe('TeddyStore.js', () => {
     expect(wrapper.text()).toEqual('Teddy')
   })
 
-  it(`should display a computed property (defined in methods) in template`, async () => {
-    const state = ref({
-      firstName: 'Teddy',
-      lastName: 'Bear',
-    })
+  // it(`should display a computed property (defined in methods) in template`, async () => {
+  //   const state = ref({
+  //     firstName: 'Teddy',
+  //     lastName: 'Bear',
+  //   })
 
-    Vue.use(
-      store.add('user', {
-        state,
-        methods: {
-          get fullName() {
-            return computed(() => state.value.firstName + ' ' + state.value.lastName)
-          },
-        },
-      })
-    )
+  //   Vue.use(
+  //     store.add('user', {
+  //       state,
+  //       actions: {
+  //         get fullName() {
+  //           return computed(() => state.value.firstName + ' ' + state.value.lastName)
+  //         },
+  //       },
+  //     })
+  //   )
 
-    const wrapper = mount({
-      template: `<div>{{$teddy.stores.user.fullName.value}}</div>`,
-      beforeMount() {
-        this.$teddy.stores.user.state.value.firstName = 'Ted'
-      },
-    })
-    await flushPromises()
-    expect(wrapper.text()).toEqual('Ted Bear')
-  })
+  //   const wrapper = mount({
+  //     template: `<div>{{$teddy.stores.user.fullName.value}}</div>`,
+  //     beforeMount() {
+  //       this.$teddy.stores.user.state.value.firstName = 'Ted'
+  //     },
+  //   })
+  //   await flushPromises()
+  //   expect(wrapper.text()).toEqual('Ted Bear')
+  // })
 
   it(`should have its stores also availabe as root properties`, async () => {
     Vue.use(

@@ -3,6 +3,7 @@ import { isObject } from 'object-string-path'
 import * as plugins from './plugins/index'
 import * as utils from './utils'
 import * as objectAccess from './object-access'
+import { computed } from '@vue/composition-api'
 
 function sortContexts(contexts) {
   const instances = contexts.filter((ctx) => ctx && isObject(ctx) && ctx instanceof TeddyStore)
@@ -38,11 +39,12 @@ export default class TeddyStore {
   }
 
   add(name, store) {
-    const others = utils.omit(store, ['state', 'methods', 'watchers'])
+    const others = utils.omit(store, ['state', 'getters', 'actions', 'watchers'])
 
     this._stores[name] = {
       ...TeddyStore.createState(store.state),
-      ...(store.methods || {}),
+      ...TeddyStore.createGetters(store.getters),
+      ...(store.actions || {}),
       ...others,
     }
 
@@ -111,13 +113,24 @@ export default class TeddyStore {
   }
 
   static createState(state) {
+    state = state || {}
     if (isRef(state)) {
       return state
-      // } else if (isReactive(state)) {
-      //   return toRef(state)
     } else {
       return ref(state)
     }
+  }
+
+  static createGetters(getters) {
+    getters = getters || {}
+    return Object.keys(getters).reduce((acc, key) => {
+      if (utils.isComputed(getters[key])) {
+        acc[key] = getters[key]
+      } else if (typeof getters[key] === 'function') {
+        acc[key] = computed(getters[key])
+      }
+      return acc
+    }, {})
   }
 
   has(name, path) {
