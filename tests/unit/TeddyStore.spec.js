@@ -239,7 +239,7 @@ describe('TeddyStore.js', () => {
     expect(hit).toEqual(2)
   })
 
-  it(`[static compute(<name>, <path>)] should provide a computed property to get/set a simple value `, () => {
+  it(`[static sync(<name>, <path>)] should provide a computed property to get/set a simple value `, () => {
     const state = ref({
       pages: [{ title: 'Once uppon a time' }],
     })
@@ -249,7 +249,7 @@ describe('TeddyStore.js', () => {
     const wrapper = mount({
       template: `<div></div>`,
       setup(_, { root }) {
-        const pages0 = computed(TeddyStore.compute('pages', 'pages.0', root))
+        const pages0 = computed(TeddyStore.sync('pages', 'pages.0', root))
         return { pages0 }
       },
     })
@@ -260,7 +260,7 @@ describe('TeddyStore.js', () => {
     expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
   })
 
-  it(`[compute(<name>, <path>)] should provide a computed property to get/set a simple value`, async () => {
+  it(`[sync(<name>, <path>)] should provide a computed property to get/set a simple value`, async () => {
     Vue.use(
       store.add('pages', {
         state: ref({
@@ -274,7 +274,7 @@ describe('TeddyStore.js', () => {
     const wrapper = mount({
       template: `<div></div>`,
       setup() {
-        let pages0 = computed(store.compute('pages', 'pages.0'))
+        let pages0 = computed(store.sync('pages', 'pages.0'))
         return { pages0 }
       },
     })
@@ -284,7 +284,7 @@ describe('TeddyStore.js', () => {
     expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
   })
 
-  it(`[compute(<name>, <path>)] should provide a computed property to get/set a value with a variable`, async () => {
+  it(`[sync(<name>, <path>)] should provide a computed property to get/set a value with a variable`, async () => {
     Vue.use(
       store.add('agents', {
         state: ref({
@@ -297,7 +297,7 @@ describe('TeddyStore.js', () => {
       template: `<div></div>`,
       data: () => ({ name: 'Joe' }),
       computed: {
-        pages0: store.compute('agents', `agents.name={name}`),
+        pages0: store.sync('agents', `agents.name={name}`),
       },
     })
 

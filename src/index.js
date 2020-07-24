@@ -185,27 +185,27 @@ export default class TeddyStore {
     }
   }
 
-  compute(name, path) {
-    return TeddyStore.compute(name, path, this)
+  sync(name, path) {
+    return TeddyStore.sync(name, path, this)
   }
 
-  static _compute(name, path, context) {
+  static _sync(name, path, context) {
     context = context || this
     const get = TeddyStore.getter(name, path, context)
     const set = TeddyStore.setter(name, path, context)
     return { get, set }
   }
 
-  static compute(name, path, context) {
+  static sync(name, path, context) {
     context = context || this
 
     if (isObject(path)) {
       return Object.keys(path).reduce((acc, key) => {
-        acc[key] = TeddyStore._compute(name, path[key], context)
+        acc[key] = TeddyStore._sync(name, path[key], context)
         return acc
       }, {})
     } else {
-      return TeddyStore._compute(name, path, context)
+      return TeddyStore._sync(name, path, context)
     }
   }
 }
