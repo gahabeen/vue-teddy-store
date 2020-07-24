@@ -1,7 +1,7 @@
 {
   "name": "vue-teddy-store",
   "description": "Next-gen simple store for Vue",
-  "version": "0.1.29",
+  "version": "0.1.30",
   "main": "dist/vue-teddy-store.esm.js",
   "module": "dist/vue-teddy-store.esm.js",
   "unpkg": "dist/vue-teddy-store.js",
