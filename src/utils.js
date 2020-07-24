@@ -11,7 +11,7 @@ export function isComputed(obj) {
 
 export function omit(obj, keys = []) {
   return Object.keys(obj).reduce((acc, key) => {
-    if (!key.includes(keys)) {
+    if (!keys.includes(key)) {
       acc[key] = obj[key]
     }
     return acc
@@ -26,4 +26,8 @@ export function debounce(fn, wait = 100) {
       fn.apply(this, args)
     }, wait)
   }
+}
+
+export function resolvePath(arr) {
+  return arr.filter(Boolean).filter((item) => item.length > 0).join('.')
 }
