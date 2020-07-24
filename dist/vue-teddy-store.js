@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.26
+  * vue-teddy-store v0.1.27
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -193,11 +193,12 @@ var VueTeddyStore = (function (compositionApi, objectStringPath) {
     }
 
     add(name, store) {
-      const others = omit(store, ['state', 'methods', 'watchers']);
+      const others = omit(store, ['state', 'getters', 'actions', 'watchers']);
 
       this._stores[name] = {
         ...TeddyStore.createState(store.state),
-        ...(store.methods || {}),
+        ...TeddyStore.createGetters(store.getters),
+        ...(store.actions || {}),
         ...others,
       };
 
@@ -266,13 +267,24 @@ var VueTeddyStore = (function (compositionApi, objectStringPath) {
     }
 
     static createState(state) {
+      state = state || {};
       if (compositionApi.isRef(state)) {
         return state
-        // } else if (isReactive(state)) {
-        //   return toRef(state)
       } else {
         return compositionApi.ref(state)
       }
+    }
+
+    static createGetters(getters) {
+      getters = getters || {};
+      return Object.keys(getters).reduce((acc, key) => {
+        if (isComputed(getters[key])) {
+          acc[key] = getters[key];
+        } else if (typeof getters[key] === 'function') {
+          acc[key] = compositionApi.computed(getters[key]);
+        }
+        return acc
+      }, {})
     }
 
     has(name, path) {

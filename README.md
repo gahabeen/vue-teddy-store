@@ -1,7 +1,6 @@
 <div align="center"> 
   <img alt="Vue Teddy Store"  src="assets/logo.png"> 
   <p style="font-weight:bold">Simple reactive store for Vue</p>
-  <p>Replacement of Vuex, based on Vue build-in features with Vue Composition Api (Vue 3)</p>
 </div>
 
 <p align="center">
@@ -12,9 +11,18 @@
   <a href="https://github.com/gahabeen/vue-teddy-store"><img alt="npm" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
+<div align="center"> 
+  <p>Replacement of Vuex, based on Vue build-in features with Vue Composition Api (Vue 3)</p>
+</div>
+
+
+## Install 
+
 ```bash
 yarn add vue-teddy-store
 ```
+
+## Example
 
 ```js
 /*   store/user.js   */

@@ -1,9 +1,9 @@
 /*!
-  * vue-teddy-store v0.1.26
+  * vue-teddy-store v0.1.27
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import { watch, reactive, isRef, ref } from '@vue/composition-api';
+import { watch, reactive, isRef, ref, computed } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, isValidKey } from 'object-string-path';
 
 const prefix = (name) => `teddy:store:${name}`;
@@ -193,11 +193,12 @@ class TeddyStore {
   }
 
   add(name, store) {
-    const others = omit(store, ['state', 'methods', 'watchers']);
+    const others = omit(store, ['state', 'getters', 'actions', 'watchers']);
 
     this._stores[name] = {
       ...TeddyStore.createState(store.state),
-      ...(store.methods || {}),
+      ...TeddyStore.createGetters(store.getters),
+      ...(store.actions || {}),
       ...others,
     };
 
@@ -266,13 +267,24 @@ class TeddyStore {
   }
 
   static createState(state) {
+    state = state || {};
     if (isRef(state)) {
       return state
-      // } else if (isReactive(state)) {
-      //   return toRef(state)
     } else {
       return ref(state)
     }
+  }
+
+  static createGetters(getters) {
+    getters = getters || {};
+    return Object.keys(getters).reduce((acc, key) => {
+      if (isComputed(getters[key])) {
+        acc[key] = getters[key];
+      } else if (typeof getters[key] === 'function') {
+        acc[key] = computed(getters[key]);
+      }
+      return acc
+    }, {})
   }
 
   has(name, path) {
