@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.30
+  * vue-teddy-store v0.1.31
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -164,6 +164,13 @@ const has = makeHas({
 const get = makeGet({
   getProp,
   hasProp,
+});
+
+var objectAccess = /*#__PURE__*/Object.freeze({
+  __proto__: null,
+  set: set,
+  has: has,
+  get: get
 });
 
 function resolveInstance(...instances) {
@@ -418,4 +425,4 @@ class TeddyStore {
 const { get: get$1, set: set$1, sync: sync$1, setter, getter, createGetters, createState } = TeddyStore;
 
 export default TeddyStore;
-export { createGetters, createState, get$1 as get, getter, set$1 as set, setter, sync$1 as sync };
+export { createGetters, createState, get$1 as get, getter, objectAccess, set$1 as set, setter, sync$1 as sync };

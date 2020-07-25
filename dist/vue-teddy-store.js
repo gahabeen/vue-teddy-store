@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.30
+  * vue-teddy-store v0.1.31
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -164,6 +164,13 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
   const get = objectStringPath.makeGet({
     getProp,
     hasProp,
+  });
+
+  var objectAccess = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    set: set,
+    has: has,
+    get: get
   });
 
   function resolveInstance(...instances) {
@@ -422,6 +429,7 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
   exports.default = TeddyStore;
   exports.get = get$1;
   exports.getter = getter;
+  exports.objectAccess = objectAccess;
   exports.set = set$1;
   exports.setter = setter;
   exports.sync = sync$1;
