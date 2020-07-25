@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.29
+  * vue-teddy-store v0.1.30
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -82,7 +82,10 @@ function omit(obj, keys = []) {
 }
 
 function resolvePath(arr) {
-  return arr.filter(Boolean).filter((item) => item.length > 0).join('.')
+  return arr
+    .filter(Boolean)
+    .filter((item) => item.length > 0)
+    .join('.')
 }
 
 function setProp(obj, key, value) {
@@ -173,6 +176,18 @@ function resolveInstance(...instances) {
       return teddy
     }
   }, null)
+}
+
+function resolveContext(...contexts) {
+  return contexts.filter(Boolean).reduce((data, context) => {
+    if (context instanceof TeddyStore && context._vueInstance) {
+      return context._vueInstance
+    } else if (isObject(context)) {
+      return context
+    } else {
+      return data
+    }
+  }, {})
 }
 
 class TeddyStore {
@@ -288,80 +303,100 @@ class TeddyStore {
     }, {})
   }
 
+  /**
+   *  has(name, path, context?)
+   */
   has(name, path, context) {
     return TeddyStore.has.call(this, name, path, context)
   }
 
   static has(name, path, context) {
-    const teddyInstance = this;
-    context = context || teddyInstance._vueInstance;
-    return has(resolveInstance(teddyInstance, context), resolvePath([`_stores.${name}.state`, path]), context)
+    const globalOrTeddyInstance = this;
+    return has(resolveInstance(globalOrTeddyInstance, context), resolvePath([`_stores.${name}.state`, path]), resolveContext(context, globalOrTeddyInstance))
   }
 
+  /**
+   *  get(name, path, context?)
+   */
   get(name, path, context) {
     return TeddyStore.get.call(this, name, path, context)
   }
 
   static get(name, path, context) {
-    const teddyInstance = this;
-    context = context || teddyInstance._vueInstance;
-    return get(resolveInstance(teddyInstance, context), resolvePath([`_stores.${name}.state`, path]), context)
+    const globalOrTeddyInstance = this;
+    return get(resolveInstance(globalOrTeddyInstance, context), resolvePath([`_stores.${name}.state`, path]), resolveContext(context, globalOrTeddyInstance))
   }
 
+  /**
+   *  get(name, path, context?)
+   */
   getter(name, path, context) {
     return TeddyStore.getter.call(this, name, path, context)
   }
 
   static getter(name, path, context) {
-    const teddyInstance = this;
+    const globalOrTeddyInstance = this;
     return function() {
-      return TeddyStore.get.call(resolveInstance(this, teddyInstance, context), name, path, context || this)
+      return TeddyStore.get.call(resolveInstance(this, globalOrTeddyInstance, context), name, path, context || this)
     }
   }
 
+  /**
+   *  set(name, path, value, context?)
+   */
   set(name, path, value, context) {
     return TeddyStore.set.call(this, name, path, value, context)
   }
 
   static set(name, path, value, context) {
-    const teddyInstance = this;
-    context = context || teddyInstance._vueInstance;
-    set(resolveInstance(teddyInstance, context), resolvePath([`_stores.${name}.state`, path]), value, context);
+    const globalOrTeddyInstance = this;
+    set(resolveInstance(globalOrTeddyInstance, context), resolvePath([`_stores.${name}.state`, path]), value, resolveContext(context, globalOrTeddyInstance));
   }
 
+  /**
+   *  setter(name, path, context?)
+   */
   setter(name, path, context) {
     return TeddyStore.setter.call(this, name, path, context)
   }
 
   static setter(name, path, context) {
-    const teddyInstance = this;
+    const globalOrTeddyInstance = this;
     return function(value) {
-      return TeddyStore.set.call(resolveInstance(this, teddyInstance, context), name, path, value, context || this)
+      TeddyStore.set.call(resolveInstance(this, globalOrTeddyInstance, context), name, path, value, context || this);
     }
   }
 
-  _sync(name, path) {
-    return TeddyStore._sync.call(this, name, path)
+  /**
+   *  _sync(name, path, context?)
+   */
+  _sync(name, path, context) {
+    return TeddyStore._sync.call(this, name, path, context)
   }
 
   static _sync(name, path, context) {
-    const teddyInstance = this;
-    const get = TeddyStore.getter.call(teddyInstance, name, path, context);
-    const set = TeddyStore.setter.call(teddyInstance, name, path, context);
+    const globalOrTeddyInstance = this;
+    const get = TeddyStore.getter.call(globalOrTeddyInstance, name, path, context);
+    const set = TeddyStore.setter.call(globalOrTeddyInstance, name, path, context);
     return { get, set }
   }
 
+  /**
+   *  sync(name, path, context?)
+   */
   sync(name, path, context) {
     return TeddyStore.sync.call(this, name, path, context)
   }
 
   static sync(name, path, context) {
-    const teddyInstance = this;
+    const globalOrTeddyInstance = this;
+    const needsToBeComputed = globalOrTeddyInstance == undefined;
+    const wrap = (compute) => (needsToBeComputed ? computed(compute) : compute);
     // If array, export all sub path as synced properties
     // Tip: use ...sync()
     if (Array.isArray(path)) {
       return path.reduce((acc, prop) => {
-        acc[prop] = TeddyStore._sync.call(teddyInstance, name, prop, context);
+        acc[prop] = wrap(TeddyStore._sync.call(globalOrTeddyInstance, name, prop, context));
         return acc
       }, {})
     }
@@ -369,15 +404,18 @@ class TeddyStore {
     // Tip: use ...sync()
     else if (isObject(path)) {
       return Object.keys(path).reduce((acc, key) => {
-        acc[key] = TeddyStore._sync.call(teddyInstance, name, path[key], context);
+        acc[key] = wrap(TeddyStore._sync.call(globalOrTeddyInstance, name, path[key], context));
         return acc
       }, {})
     }
     // By default, return the synced property path
     else {
-      return TeddyStore._sync.call(teddyInstance, name, path, context)
+      return wrap(TeddyStore._sync.call(globalOrTeddyInstance, name, path, context))
     }
   }
 }
 
+const { get: get$1, set: set$1, sync: sync$1, setter, getter, createGetters, createState } = TeddyStore;
+
 export default TeddyStore;
+export { createGetters, createState, get$1 as get, getter, set$1 as set, setter, sync$1 as sync };
