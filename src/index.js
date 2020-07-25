@@ -255,4 +255,4 @@ export default class TeddyStore {
 }
 
 const { get, set, sync, setter, getter, createGetters, createState } = TeddyStore
-export { get, set, sync, setter, getter, createGetters, createState }
+export { objectAccess, get, set, sync, setter, getter, createGetters, createState }
