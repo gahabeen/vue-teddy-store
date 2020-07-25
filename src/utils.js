@@ -9,6 +9,10 @@ export function isComputed(obj) {
   }
 }
 
+export function isString(value) {
+  return typeof value === 'string'
+}
+
 export function omit(obj, keys = []) {
   return Object.keys(obj).reduce((acc, key) => {
     if (!keys.includes(key)) {
@@ -29,5 +33,8 @@ export function debounce(fn, wait = 100) {
 }
 
 export function resolvePath(arr) {
-  return arr.filter(Boolean).filter((item) => item.length > 0).join('.')
+  return arr
+    .filter(Boolean)
+    .filter((item) => item.length > 0)
+    .join('.')
 }

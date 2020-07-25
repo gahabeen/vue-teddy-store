@@ -1,18 +1,14 @@
 import VueCompositionApi, { computed, ref, watch } from '@vue/composition-api'
 import { mount, createLocalVue } from '@vue/test-utils'
 import Vue from 'vue'
-import TeddyStore from '../../src/index'
+import TeddyStore, { get, set, sync } from '../../src/index'
 import flushPromises from 'flush-promises'
 
 Vue.use(VueCompositionApi)
 
-// const store = new TeddyStore()
-// localVue.use(store)
-
 describe('TeddyStore.js', () => {
   it('should install the store under global variable $teddy', async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
     localVue.use(store)
 
@@ -29,7 +25,6 @@ describe('TeddyStore.js', () => {
 
   it('[createState(<state>)] should provide a computed { state } as a computed value', async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
     localVue.use(store)
 
@@ -53,7 +48,6 @@ describe('TeddyStore.js', () => {
 
   it('[createState(<state>)] should provide a computed { state } as a ref()', async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
     localVue.use(store)
 
@@ -79,7 +73,6 @@ describe('TeddyStore.js', () => {
 
   it('[createGetters(<getters>)] should make sure getters are computed properties (when they arnt)', async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = {
@@ -109,7 +102,6 @@ describe('TeddyStore.js', () => {
 
   it('[createGetters(<getters>)] should make sure getters are computed properties (when they are)', async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = {
@@ -139,7 +131,6 @@ describe('TeddyStore.js', () => {
 
   it(`[add(<name>, <store>)] should provide a computed { state } as a computed value for a module`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -163,7 +154,6 @@ describe('TeddyStore.js', () => {
 
   it(`[add(<name>, <store>)] should provide a computed { state } as a computed value for a module`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -190,7 +180,6 @@ describe('TeddyStore.js', () => {
 
   it(`[add(<name>, <store>)] should register the watchers array`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = ref({
@@ -233,7 +222,6 @@ describe('TeddyStore.js', () => {
 
   it(`[add(<name>, <store>)] should register a general watcher object`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = ref({
@@ -272,7 +260,6 @@ describe('TeddyStore.js', () => {
 
   it(`[add(<name>, <store>)] should register a general watcher function`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = ref({
@@ -308,7 +295,6 @@ describe('TeddyStore.js', () => {
 
   it(`[add(<name>, <store>)] should register a watcher on several paths`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = ref({
@@ -352,9 +338,38 @@ describe('TeddyStore.js', () => {
     expect(hit).toEqual(2)
   })
 
+  it(`[exported static sync(<name>, <path>)] should provide a computed property to get/set a simple value (without need of computed())`, async () => {
+    const localVue = createLocalVue()
+    const store = new TeddyStore()
+
+    const state = {
+      pages: [{ title: 'Once uppon a time' }],
+    }
+
+    localVue.use(store.add('pages', { state }))
+
+    const wrapper = mount(
+      {
+        template: `<div></div>`,
+        setup(_, { root }) {
+          return { pages0: sync('pages', 'pages.0', root) }
+        },
+      },
+      {
+        localVue,
+      }
+    )
+    await flushPromises()
+
+    wrapper.vm.pages0 = { title: 'New title' }
+    await flushPromises()
+
+    expect(wrapper.vm.pages0.title).toMatch('New title')
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('New title')
+  })
+
   it(`[static sync(<name>, <path>)] should provide a computed property to get/set a simple value `, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = {
@@ -386,7 +401,6 @@ describe('TeddyStore.js', () => {
 
   it(`[sync(<name>, <path>)] should provide a computed property to get/set a simple value`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -420,7 +434,6 @@ describe('TeddyStore.js', () => {
 
   it(`[sync(<name>, <path>)] should provide a computed property to get/set a value with a variable`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -451,9 +464,33 @@ describe('TeddyStore.js', () => {
     expect(wrapper.vm.$teddy.stores.agents.state.value.agents[0].title).toMatch('craftsman')
   })
 
+  it(`[exported static get(<name>, <path>)] should get a value at path`, () => {
+    const localVue = createLocalVue()
+    const store = new TeddyStore()
+
+    localVue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
+
+    mount(
+      {
+        template: `<div></div>`,
+        setup(_, { root }) {
+          expect(get('pages', 'pages.0.title', root)).toMatch('Once uppon a time')
+        },
+      },
+      {
+        localVue,
+      }
+    )
+  })
+
   it(`[static get(<name>, <path>)] should get a value at path`, () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -479,7 +516,6 @@ describe('TeddyStore.js', () => {
 
   it(`[get(<name>, <path>)] should get a value at path`, () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -503,9 +539,36 @@ describe('TeddyStore.js', () => {
     )
   })
 
+  it(`[exported static set(<name>, <path>)] should set a value at path`, async () => {
+    const localVue = createLocalVue()
+    const store = new TeddyStore()
+
+    localVue.use(
+      store.add('pages', {
+        state: ref({
+          pages: [{ title: 'Once uppon a time' }],
+        }),
+      })
+    )
+
+    const wrapper = mount(
+      {
+        template: `<div></div>`,
+        setup(_, { root }) {
+          set('pages', 'pages.0.title', 'Another title', root)
+        },
+      },
+      {
+        localVue,
+      }
+    )
+    await flushPromises()
+
+    expect(wrapper.vm.$teddy.stores.pages.state.value.pages[0].title).toMatch('Another title')
+  })
+
   it(`[static set(<name>, <path>)] should set a value at path`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -534,7 +597,6 @@ describe('TeddyStore.js', () => {
 
   it(`[set(<name>, <path>)] should set a value at path`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -563,7 +625,6 @@ describe('TeddyStore.js', () => {
 
   it(`[static getter(<name>, <path>)] should provide a getter for a simple value`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -594,7 +655,6 @@ describe('TeddyStore.js', () => {
 
   it(`[getter(<name>, <path>)] should provide a getter for a simple value`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = ref({
@@ -627,7 +687,6 @@ describe('TeddyStore.js', () => {
 
   it(`[static setter(<name>, <path>)] should provide a setter for a simple value`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -665,7 +724,6 @@ describe('TeddyStore.js', () => {
 
   it(`[set(<name>, <path>)] should provide a setter for a simple value`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     const state = ref({
@@ -702,7 +760,6 @@ describe('TeddyStore.js', () => {
 
   it(`[use(<plugin>)] should allow watching mutations via a plugin`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -742,7 +799,6 @@ describe('TeddyStore.js', () => {
 
   it(`should display a state property in template`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
@@ -767,36 +823,43 @@ describe('TeddyStore.js', () => {
     expect(wrapper.text()).toEqual('Teddy')
   })
 
-  // it(`should display a computed property (defined in methods) in template`, async () => {
-  //   const state = ref({
-  //     firstName: 'Teddy',
-  //     lastName: 'Bear',
-  //   })
+  it(`should display a computed property (defined in methods) in template`, async () => {
+    const localVue = createLocalVue()
+    const store = new TeddyStore()
 
-  //   localVue.use(
-  //     store.add('user', {
-  //       state,
-  //       actions: {
-  //         get fullName() {
-  //           return computed(() => state.value.firstName + ' ' + state.value.lastName)
-  //         },
-  //       },
-  //     })
-  //   )
+    const state = ref({
+      firstName: 'Teddy',
+      lastName: 'Bear',
+    })
 
-  //   const wrapper = mount({
-  //     template: `<div>{{$teddy.stores.user.fullName.value}}</div>`,
-  //     beforeMount() {
-  //       this.$teddy.stores.user.state.value.firstName = 'Ted'
-  //     },
-  //   })
-  //
-  //   expect(wrapper.text()).toEqual('Ted Bear')
-  // })
+    localVue.use(
+      store.add('user', {
+        state,
+        getters: {
+          fullName() {
+            return state.value.firstName + ' ' + state.value.lastName
+          },
+        },
+      })
+    )
+
+    const wrapper = mount(
+      {
+        template: `<div>{{$teddy.stores.user.fullName.value}}</div>`,
+        beforeMount() {
+          this.$teddy.stores.user.state.value.firstName = 'Ted'
+        },
+      },
+      {
+        localVue,
+      }
+    )
+
+    expect(wrapper.text()).toEqual('Ted Bear')
+  })
 
   it(`should have its stores also availabe as root properties`, async () => {
     const localVue = createLocalVue()
-
     const store = new TeddyStore()
 
     localVue.use(
