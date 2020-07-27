@@ -17,11 +17,16 @@
 
 Vue Teddy Store is the easiest - next-generation - store for Vue application. <a href="http://vueteddystore.com" target="_blank">Check out the documentation</a> to find more about its minimal & delightful API.
 
-<div align="center" class="py-5"> 
+<br />  
+
+<div align="center"> 
   <a href="http://vueteddystore.com" target="_blank">
     <img alt="Getting started"  src="assets/getting-started.png"> 
   </a>
-</div>
+</div>  
+
+<br />  
+
 
 ## Example
 
