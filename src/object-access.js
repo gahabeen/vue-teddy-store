@@ -1,4 +1,4 @@
-import { makeGet, makeSet, makeHas, isObject, isValidKey } from 'object-string-path'
+import { isObject, isValidKey, makeGet, makeHas, makeSet } from 'object-string-path'
 import { isComputed } from './utils'
 
 function setProp(obj, key, value) {
@@ -62,6 +62,38 @@ function hasProp(obj, key) {
     return false
   }
 }
+
+function afterGetSteps(storeNameHook) {
+  return (steps) => {
+    const [name, ..._steps] = steps || []
+    if (!name) return []
+    storeNameHook(name)
+    return ['_stores', name, 'state', ..._steps]
+  }
+}
+
+export const makeTeddySet = (storeNameHook = (name) => name) =>
+  makeSet({
+    setProp,
+    getProp,
+    hasProp,
+    afterGetSteps: afterGetSteps(storeNameHook),
+  })
+
+export const makeTeddyHas = (storeNameHook = (name) => name) => {
+  return makeHas({
+    getProp,
+    hasProp,
+    afterGetSteps: afterGetSteps(storeNameHook),
+  })
+}
+
+export const makeTeddyGet = (storeNameHook = (name) => name) =>
+  makeGet({
+    getProp,
+    hasProp,
+    afterGetSteps: afterGetSteps(storeNameHook),
+  })
 
 export const set = makeSet({
   setProp,
