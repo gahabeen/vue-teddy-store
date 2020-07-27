@@ -3,65 +3,8 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
+var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods) {
   'use strict';
-
-  const prefix = (name) => `teddy:store:${name}`;
-  var cache = {
-    handle({ name, store }) {
-      /* istanbul ignore next */
-      const localStorage = window.localStorage || global.localStorage || {};
-      /* istanbul ignore next */
-      if (localStorage) {
-        // Fetched saved state when exists
-        const cached = localStorage.getItem(prefix(name));
-        if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
-        // Watch for mutations, save them
-        compositionApi.watch(
-          store.state,
-          (newState, oldState) => {
-            if (newState !== oldState) {
-              localStorage.setItem(prefix(name), JSON.stringify(newState));
-            }
-          },
-          { immediate: true, deep: true }
-        );
-      }
-    },
-  };
-
-  var history = {
-    handle({ store }) {
-      store._history = compositionApi.reactive([]);
-      compositionApi.watch(
-        store.state,
-        (newState) => {
-          store._history.push(newState);
-        },
-        { immediate: true, deep: true }
-      );
-    },
-  };
-
-  var sync = {
-    handle({ name, store }) {
-      /* istanbul ignore next */
-      if (window) {
-        window.addEventListener('storage', (e) => {
-          if (e.key === prefix(name)) {
-            store.state = compositionApi.reactive({ ...store.state, ...JSON.parse(e.newValue) });
-          }
-        });
-      }
-    },
-  };
-
-  var plugins = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    cache: cache,
-    history: history,
-    sync: sync
-  });
 
   function isComputed(obj) {
     if (!objectStringPath.isObject(obj) || (objectStringPath.isObject(obj) && !('value' in obj))) {
@@ -150,6 +93,38 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
     }
   }
 
+  function afterGetSteps(storeNameHook) {
+    return (steps) => {
+      const [name, ..._steps] = steps || [];
+      if (!name) return []
+      storeNameHook(name);
+      return ['_stores', name, 'state', ..._steps]
+    }
+  }
+
+  const makeTeddySet = (storeNameHook = (name) => name) =>
+    objectStringPath.makeSet({
+      setProp,
+      getProp,
+      hasProp,
+      afterGetSteps: afterGetSteps(storeNameHook),
+    });
+
+  const makeTeddyHas = (storeNameHook = (name) => name) => {
+    return objectStringPath.makeHas({
+      getProp,
+      hasProp,
+      afterGetSteps: afterGetSteps(storeNameHook),
+    })
+  };
+
+  const makeTeddyGet = (storeNameHook = (name) => name) =>
+    objectStringPath.makeGet({
+      getProp,
+      hasProp,
+      afterGetSteps: afterGetSteps(storeNameHook),
+    });
+
   const set = objectStringPath.makeSet({
     setProp,
     getProp,
@@ -168,33 +143,78 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
 
   var objectAccess = /*#__PURE__*/Object.freeze({
     __proto__: null,
+    makeTeddySet: makeTeddySet,
+    makeTeddyHas: makeTeddyHas,
+    makeTeddyGet: makeTeddyGet,
     set: set,
     has: has,
     get: get
   });
 
-  function resolveInstance(...instances) {
-    return instances.filter(Boolean).reduce((teddy, instance) => {
-      if (instance instanceof TeddyStore) {
-        return instance
-      } else if (objectStringPath.isObject(instance) && instance.$teddy instanceof TeddyStore) {
-        return instance.$teddy
-      } else {
-        return teddy
+  const prefix = (name) => `teddy:store:${name}`;
+  var cache = {
+    handle({ name, store }) {
+      /* istanbul ignore next */
+      const localStorage = window.localStorage || global.localStorage || {};
+      /* istanbul ignore next */
+      if (localStorage) {
+        // Fetched saved state when exists
+        const cached = localStorage.getItem(prefix(name));
+        if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
+        // Watch for mutations, save them
+        VueCompositionMethods.watch(
+          store.state,
+          (newState, oldState) => {
+            if (newState !== oldState) {
+              localStorage.setItem(prefix(name), JSON.stringify(newState));
+            }
+          },
+          { immediate: true, deep: true }
+        );
       }
-    }, null)
-  }
+    },
+  };
 
-  function resolveContext(...contexts) {
-    return contexts.filter(Boolean).reduce((data, context) => {
-      if (context instanceof TeddyStore && context._vueInstance) {
-        return context._vueInstance
-      } else if (objectStringPath.isObject(context)) {
-        return context
-      } else {
-        return data
+  var history = {
+    handle({ store }) {
+      store._history = VueCompositionMethods.reactive([]);
+      VueCompositionMethods.watch(
+        store.state,
+        (newState) => {
+          store._history.push(newState);
+        },
+        { immediate: true, deep: true }
+      );
+    },
+  };
+
+  var sync = {
+    handle({ name, store }) {
+      /* istanbul ignore next */
+      if (window) {
+        window.addEventListener('storage', (e) => {
+          if (e.key === prefix(name)) {
+            store.state = VueCompositionMethods.reactive({ ...store.state, ...JSON.parse(e.newValue) });
+          }
+        });
       }
-    }, {})
+    },
+  };
+
+  var plugins = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    cache: cache,
+    history: history,
+    sync: sync
+  });
+
+  let Vue; // binding to Vue
+
+  class MissingStoreError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = 'MissingStoreError';
+    }
   }
 
   class TeddyStore {
@@ -202,14 +222,18 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
       this._vueInstance = null;
       this._stores = {};
       this._plugins = plugins;
+
+      // Add default store
+      this.add('@', { state: {} });
     }
 
     add(name, store) {
+      store = store || {};
       const others = omit(store, ['state', 'getters', 'actions', 'watchers']);
 
       this._stores[name] = {
-        state: TeddyStore.createState(store.state),
-        ...TeddyStore.createGetters(store.getters),
+        state: createState(store.state),
+        ...createGetters(store.getters),
         ...(store.actions || {}),
         ...others,
       };
@@ -225,19 +249,19 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
 
       for (let watcher of watchers) {
         if (typeof watcher === 'function') {
-          compositionApi.watch(() => this._stores[name].state.value, watcher, { deep: true });
+          VueCompositionMethods.watch(() => this._stores[name].state.value, watcher, { deep: true });
         } else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
           const { handler, path, paths = [], ...options } = watcher;
           if (path) {
-            compositionApi.watch(() => get(this._stores[name].state.value, path), handler, { deep: true, ...options });
+            VueCompositionMethods.watch(() => makeTeddyGet()(this, resolvePath([name, path])), handler, { deep: true, ...options });
           } else if (paths.length > 0) {
-            compositionApi.watch(
-              paths.map((p) => () => get(this._stores[name].state.value, p)),
+            VueCompositionMethods.watch(
+              paths.map((p) => () => makeTeddyGet()(this, resolvePath([name, p]))),
               handler,
               { deep: true, ...options }
             );
           } else {
-            compositionApi.watch(() => this._stores[name].state.value, handler, { deep: true, ...options });
+            VueCompositionMethods.watch(() => this._stores[name].state.value, handler, { deep: true, ...options });
           }
         }
       }
@@ -245,9 +269,19 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
       return this
     }
 
+    exists(name) {
+      return name in this._stores
+    }
+
     remove(name) {
       if (name in this) delete this[name];
       if (name in this._stores) delete this._stores[name];
+    }
+
+    reset() {
+      for (let store in this._stores) {
+        this.remove(store);
+      }
     }
 
     use(plugin = {}) {
@@ -275,165 +309,226 @@ var VueTeddyStore = (function (exports, compositionApi, objectStringPath) {
       return this
     }
 
-    install(VueInstance) {
+    install(...args) {
       const TeddyInstance = this;
+      const [VueInstance] = args;
 
-      Object.defineProperty(VueInstance.prototype, '$teddy', {
-        get() {
-          return TeddyInstance.attachTo(this)
-        },
-        configurable: true,
-      });
+      // Vue 2
+      if (VueInstance.version.startsWith('2')) {
+        /* istanbul ignore next */
+        if (Vue && VueInstance === Vue) {
+          return
+        }
+
+        Vue = VueInstance;
+
+        Object.defineProperty(VueInstance.prototype, '$teddy', {
+          get() {
+            return TeddyInstance.attachTo(this)
+          },
+          configurable: true,
+        });
+      }
+      // Vue 3
+      /* istanbul ignore next */
+      else if (VueInstance.version.startsWith('3')) {
+        const [app, options] = args;
+
+        app.provide('teddy', options);
+        Object.defineProperty(app.config.globalProperties, '$teddy', {
+          get() {
+            return TeddyInstance.attachTo(this)
+          },
+          configurable: true,
+        });
+      }
     }
 
     get stores() {
       return this._stores
     }
 
-    static createState(state = {}) {
-      if (compositionApi.isRef(state)) {
-        return state
-      } else {
-        return compositionApi.ref(state)
-      }
+    has(path, context) {
+      return has$1(path, context)
     }
 
-    static createGetters(getters) {
-      getters = getters || {};
-      return Object.keys(getters).reduce((acc, key) => {
-        if (isComputed(getters[key])) {
-          acc[key] = getters[key];
-        } else if (typeof getters[key] === 'function') {
-          acc[key] = compositionApi.computed(getters[key]);
-        }
-        return acc
-      }, {})
+    get(path, context) {
+      return get$1(path, context)
     }
 
-    /**
-     *  has(name, path, context?)
-     */
-    has(name, path, context) {
-      return TeddyStore.has.call(this, name, path, context)
+    getter(path, context) {
+      return getter(path, context)
     }
 
-    static has(name, path, context) {
-      const globalOrTeddyInstance = this;
-      return has(resolveInstance(globalOrTeddyInstance, context), resolvePath([`_stores.${name}.state`, path]), resolveContext(context, globalOrTeddyInstance))
+    set(path, value, context) {
+      return set$1(path, value, context)
     }
 
-    /**
-     *  get(name, path, context?)
-     */
-    get(name, path, context) {
-      return TeddyStore.get.call(this, name, path, context)
+    setter(path, context) {
+      return setter(path, context)
     }
 
-    static get(name, path, context) {
-      const globalOrTeddyInstance = this;
-      return get(resolveInstance(globalOrTeddyInstance, context), resolvePath([`_stores.${name}.state`, path]), resolveContext(context, globalOrTeddyInstance))
+    sync(path, context) {
+      return sync$1(path, context)
     }
 
-    /**
-     *  get(name, path, context?)
-     */
-    getter(name, path, context) {
-      return TeddyStore.getter.call(this, name, path, context)
-    }
-
-    static getter(name, path, context) {
-      const globalOrTeddyInstance = this;
-      return function() {
-        return TeddyStore.get.call(resolveInstance(this, globalOrTeddyInstance, context), name, path, context || this)
-      }
-    }
-
-    /**
-     *  set(name, path, value, context?)
-     */
-    set(name, path, value, context) {
-      return TeddyStore.set.call(this, name, path, value, context)
-    }
-
-    static set(name, path, value, context) {
-      const globalOrTeddyInstance = this;
-      set(resolveInstance(globalOrTeddyInstance, context), resolvePath([`_stores.${name}.state`, path]), value, resolveContext(context, globalOrTeddyInstance));
-    }
-
-    /**
-     *  setter(name, path, context?)
-     */
-    setter(name, path, context) {
-      return TeddyStore.setter.call(this, name, path, context)
-    }
-
-    static setter(name, path, context) {
-      const globalOrTeddyInstance = this;
-      return function(value) {
-        TeddyStore.set.call(resolveInstance(this, globalOrTeddyInstance, context), name, path, value, context || this);
-      }
-    }
-
-    /**
-     *  _sync(name, path, context?)
-     */
-    _sync(name, path, context) {
-      return TeddyStore._sync.call(this, name, path, context)
-    }
-
-    static _sync(name, path, context) {
-      const globalOrTeddyInstance = this;
-      const get = TeddyStore.getter.call(globalOrTeddyInstance, name, path, context);
-      const set = TeddyStore.setter.call(globalOrTeddyInstance, name, path, context);
-      return { get, set }
-    }
-
-    /**
-     *  sync(name, path, context?)
-     */
-    sync(name, path, context) {
-      return TeddyStore.sync.call(this, name, path, context)
-    }
-
-    static sync(name, path, context) {
-      const globalOrTeddyInstance = this;
-      const needsToBeComputed = globalOrTeddyInstance == undefined;
-      const wrap = (compute) => (needsToBeComputed ? compositionApi.computed(compute) : compute);
-      // If array, export all sub path as synced properties
-      // Tip: use ...sync()
-      if (Array.isArray(path)) {
-        return path.reduce((acc, prop) => {
-          acc[prop] = wrap(TeddyStore._sync.call(globalOrTeddyInstance, name, prop, context));
-          return acc
-        }, {})
-      }
-      // If object, export all synced properties path
-      // Tip: use ...sync()
-      else if (objectStringPath.isObject(path)) {
-        return Object.keys(path).reduce((acc, key) => {
-          acc[key] = wrap(TeddyStore._sync.call(globalOrTeddyInstance, name, path[key], context));
-          return acc
-        }, {})
-      }
-      // By default, return the synced property path
-      else {
-        return wrap(TeddyStore._sync.call(globalOrTeddyInstance, name, path, context))
-      }
+    computed(definition) {
+      return computed(definition)
     }
   }
 
-  const { get: get$1, set: set$1, sync: sync$1, setter, getter, createGetters, createState } = TeddyStore;
+  const createState = (state = {}) => {
+    if (VueCompositionMethods.isRef(state)) {
+      return state
+    } else {
+      return VueCompositionMethods.ref(state)
+    }
+  };
 
-  exports.createGetters = createGetters;
-  exports.createState = createState;
+  const createGetters = (getters) => {
+    getters = getters || {};
+    return Object.keys(getters).reduce((acc, key) => {
+      if (isComputed(getters[key])) {
+        acc[key] = getters[key];
+      } else if (typeof getters[key] === 'function') {
+        acc[key] = computed(getters[key]);
+      }
+      return acc
+    }, {})
+  };
+
+  const has$1 = (path, context) => {
+    const teddy = Vue.prototype.$teddy;
+    const _has = makeTeddyHas((name) => {
+      if (!teddy.exists(name)) {
+        throw new MissingStoreError(`You're trying to use the method .has('${path}', context?) on a store which doesn't exists: '${name}'`)
+      }
+    });
+    return _has(teddy, path, resolveContext(context, teddy))
+  };
+
+  const get$1 = (path, context) => {
+    const teddy = Vue.prototype.$teddy;
+    const _get = makeTeddyGet((name) => {
+      if (!teddy.exists(name)) {
+        throw new MissingStoreError(`You're trying to use the method .get('${path}', context?) on a store which doesn't exists: '${name}'`)
+      }
+    });
+    return _get(teddy, path, resolveContext(context, teddy))
+  };
+
+  const set$1 = (path, value, context) => {
+    const teddy = Vue.prototype.$teddy;
+    const _set = makeTeddySet((name) => {
+      if (!teddy.exists(name)) {
+        throw new MissingStoreError(`You're trying to use the method .set('${path}', value, context?) on a store which doesn't exists: '${name}'`)
+      }
+    });
+    _set(teddy, path, value, resolveContext(context, teddy));
+  };
+
+  const getter = (path, context) => {
+    return function() {
+      return get$1(path, context)
+    }
+  };
+
+  const setter = (path, context) => {
+    return function(value) {
+      set$1(path, value, context);
+    }
+  };
+
+  const sync$1 = (path, context) => {
+    const _sync = (path, context) => {
+      return {
+        get: getter(path, context),
+        set: setter(path, context),
+      }
+    };
+
+    // If array, export all sub path as synced properties
+    // Tip: use ...sync()
+    if (Array.isArray(path)) {
+      return path.reduce((acc, prop) => {
+        acc[prop] = _sync(prop, context);
+        return acc
+      }, {})
+    }
+    // If object, export all synced properties path
+    // Tip: use ...sync()
+    else if (objectStringPath.isObject(path)) {
+      return Object.keys(path).reduce((acc, key) => {
+        acc[key] = _sync(path[key], context);
+        return acc
+      }, {})
+    }
+    // By default, return the synced property path
+    else {
+      return _sync(path, context)
+    }
+  };
+
+  const computed = (definition) => {
+    if (objectStringPath.isObject(definition)) {
+      const hasGetter = 'get' in definition && typeof definition.get === 'function';
+      const hasSetter = 'set' in definition && typeof definition.set === 'function';
+      if (hasGetter || hasSetter) {
+        return VueCompositionMethods.computed(definition)
+      } else {
+        return Object.keys(definition).reduce((acc, key) => {
+          acc[key] = VueCompositionMethods.computed(definition[key]);
+          return acc
+        }, {})
+      }
+    } else {
+      return VueCompositionMethods.computed(definition)
+    }
+  };
+
+  function resolveContext(...contexts) {
+    return contexts.filter(Boolean).reduce((data, context) => {
+      if (context instanceof TeddyStore && context._vueInstance) {
+        return context._vueInstance
+      } else if (objectStringPath.isObject(context)) {
+        return context
+      } else {
+        return data
+      }
+    }, {})
+  }
+
+  var others = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    MissingStoreError: MissingStoreError,
+    'default': TeddyStore,
+    createState: createState,
+    createGetters: createGetters,
+    has: has$1,
+    get: get$1,
+    set: set$1,
+    getter: getter,
+    setter: setter,
+    sync: sync$1,
+    computed: computed,
+    resolveContext: resolveContext
+  });
+
+  const { has: has$2, get: get$2, set: set$2, sync: sync$2, computed: computed$1, setter: setter$1, getter: getter$1, createGetters: createGetters$1, createState: createState$1, MissingStoreError: MissingStoreError$1 } = others;
+
+  exports.MissingStoreError = MissingStoreError$1;
+  exports.computed = computed$1;
+  exports.createGetters = createGetters$1;
+  exports.createState = createState$1;
   exports.default = TeddyStore;
-  exports.get = get$1;
-  exports.getter = getter;
+  exports.get = get$2;
+  exports.getter = getter$1;
+  exports.has = has$2;
   exports.objectAccess = objectAccess;
-  exports.set = set$1;
-  exports.setter = setter;
-  exports.sync = sync$1;
+  exports.set = set$2;
+  exports.setter = setter$1;
+  exports.sync = sync$2;
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath));
+}({}, objectStringPath, vueCompositionApi));
