@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.31
+  * vue-teddy-store v0.1.33
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -209,78 +209,6 @@ var features = /*#__PURE__*/Object.freeze({
   sync: sync
 });
 
-const target = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : { __VUE_DEVTOOLS_GLOBAL_HOOK__: undefined };
-const devtoolHook = target.__VUE_DEVTOOLS_GLOBAL_HOOK__;
-
-const listenedPaths = [];
-
-function registerForDevtools(name, store) {
-  if (!devtoolHook) {
-    return
-  }
-
-  function listen(state, parentKey = '') {
-    for (const key in state) {
-      const path = `${parentKey}${parentKey ? '.' : ''}${key}`;
-
-      if (listenedPaths.includes(path)) {
-        continue
-      }
-
-      listenedPaths.push(path);
-
-      const registerChildren = (child) => {
-        if (typeof child === 'object') {
-          listen(child, path);
-        }
-      };
-
-      store.registerWatchers(name, {
-        path,
-        handler(value) {
-          registerChildren(value);
-
-          devtoolHook.emit(
-            'vuex:mutation',
-            {
-              type: 'change',
-              payload: {
-                key: path,
-                value,
-              },
-            },
-            store.state
-          );
-        },
-      });
-
-      registerChildren(state[key]);
-    }
-  }
-
-  Object.defineProperty(store, 'getters', {
-    get: () => store._getters,
-  });
-
-  const wrappedStore = {
-    ...store,
-    _devtoolHook: devtoolHook,
-    _vm: { $options: { computed: {} } },
-    _mutations: {},
-    replaceState: () => {},
-  };
-
-  devtoolHook.emit('vuex:init', wrappedStore);
-
-  devtoolHook.on('vuex:travel-to-state', (targetState) => {
-    // TODO: this doesnt reset keys added after targetState
-    Object.assign(store.state, targetState);
-  });
-
-  // listen for changes to emit vuex:mutations
-  listen(store.state);
-}
-
 let Vue; // binding to Vue
 
 class MissingStoreError extends Error {
@@ -301,7 +229,7 @@ class TeddyStore {
     this._features = features;
 
     // Add default store
-    this.add('@', { state: {} });
+    // this.add('@', { state: {} })
   }
 
   add(name, store) {
@@ -316,9 +244,9 @@ class TeddyStore {
     this.addStoreProperties(name, omit(store, ['state', 'getters', 'actions', 'watcher', 'watchers', 'devtools']));
     this.registerWatchers(name, store.watcher);
     this.registerWatchers(name, store.watchers);
-    if (store.devtools || this._options.devtools) {
-      this.registerForDevtools(name);
-    }
+    // if (store.devtools || this._options.devtools) {
+    //   this.registerForDevtools(name)
+    // }
 
     return this
   }
@@ -358,7 +286,7 @@ class TeddyStore {
   }
 
   addGetters(name, getters) {
-    this.addStoreProperties(name, createGetters(getters), { alsoAtPath: '_getters' });
+    this.addStoreProperties(name, createGetters(this._stores[name], getters), { alsoAtPath: '_getters' });
     return this
   }
 
@@ -390,6 +318,8 @@ class TeddyStore {
         const { handler, path, paths = [], ...options } = watcher;
         // Contains a path
         if (typeof path === 'string') {
+          console.log('>> register watcher', path, makeTeddyGet()(this, resolvePath([name, path])));
+
           watch(() => makeTeddyGet()(this, resolvePath([name, path])), handler, { deep: true, ...options });
         }
         // Contains paths
@@ -410,9 +340,10 @@ class TeddyStore {
     return this
   }
 
-  registerForDevtools(name) {
-    return registerForDevtools(name, this._stores[name])
-  }
+  // registerForDevtools(name) {
+  //   const { watchers } = registerForDevtools(this._stores[name])
+  //   this.registerWatchers(name, watchers)
+  // }
 
   exists(name) {
     return name in this._stores
@@ -532,13 +463,14 @@ const createState = (state = {}) => {
   }
 };
 
-const createGetters = (getters) => {
+const createGetters = (store, getters) => {
   getters = getters || {};
   return Object.keys(getters).reduce((acc, key) => {
     if (isComputed(getters[key])) {
       acc[key] = getters[key];
     } else if (typeof getters[key] === 'function') {
-      acc[key] = computed(getters[key]);
+      const context = { state: store.state, getters: store.getters };
+      acc[key] = computed(() => getters[key](context));
     }
     return acc
   }, {})
@@ -548,7 +480,7 @@ const createActions = (store, actions) => {
   actions = actions || {};
   return Object.keys(actions).reduce((acc, key) => {
     if (typeof actions[key] === 'function') {
-      const context = { state: store.state, getter: store.getters };
+      const context = { state: store.state, getters: store.getters };
       acc[key] = (...args) => actions[key](context, ...args);
     }
     return acc

@@ -4,7 +4,7 @@ import { isObject } from 'object-string-path'
 import * as accessors from './accessors'
 import * as features from './features/index'
 import * as utils from './utils'
-import { registerForDevtools } from './devtools'
+// import { registerForDevtools } from './devtools'
 import __Vue from 'vue'
 
 let Vue // binding to Vue
@@ -27,7 +27,7 @@ export default class TeddyStore {
     this._features = features
 
     // Add default store
-    this.add('@', { state: {} })
+    // this.add('@', { state: {} })
   }
 
   add(name, store) {
@@ -42,9 +42,9 @@ export default class TeddyStore {
     this.addStoreProperties(name, utils.omit(store, ['state', 'getters', 'actions', 'watcher', 'watchers', 'devtools']))
     this.registerWatchers(name, store.watcher)
     this.registerWatchers(name, store.watchers)
-    if (store.devtools || this._options.devtools) {
-      this.registerForDevtools(name)
-    }
+    // if (store.devtools || this._options.devtools) {
+    //   this.registerForDevtools(name)
+    // }
 
     return this
   }
@@ -84,7 +84,7 @@ export default class TeddyStore {
   }
 
   addGetters(name, getters) {
-    this.addStoreProperties(name, createGetters(getters), { alsoAtPath: '_getters' })
+    this.addStoreProperties(name, createGetters(this._stores[name], getters), { alsoAtPath: '_getters' })
     return this
   }
 
@@ -116,6 +116,8 @@ export default class TeddyStore {
         const { handler, path, paths = [], ...options } = watcher
         // Contains a path
         if (typeof path === 'string') {
+          console.log('>> register watcher', path, accessors.makeTeddyGet()(this, utils.resolvePath([name, path])))
+
           watch(() => accessors.makeTeddyGet()(this, utils.resolvePath([name, path])), handler, { deep: true, ...options })
         }
         // Contains paths
@@ -136,9 +138,10 @@ export default class TeddyStore {
     return this
   }
 
-  registerForDevtools(name) {
-    return registerForDevtools(name, this._stores[name])
-  }
+  // registerForDevtools(name) {
+  //   const { watchers } = registerForDevtools(this._stores[name])
+  //   this.registerWatchers(name, watchers)
+  // }
 
   exists(name) {
     return name in this._stores
@@ -258,13 +261,14 @@ export const createState = (state = {}) => {
   }
 }
 
-export const createGetters = (getters) => {
+export const createGetters = (store, getters) => {
   getters = getters || {}
   return Object.keys(getters).reduce((acc, key) => {
     if (utils.isComputed(getters[key])) {
       acc[key] = getters[key]
     } else if (typeof getters[key] === 'function') {
-      acc[key] = computed(getters[key])
+      const context = { state: store.state, getters: store.getters }
+      acc[key] = computed(() => getters[key](context))
     }
     return acc
   }, {})
@@ -274,7 +278,7 @@ export const createActions = (store, actions) => {
   actions = actions || {}
   return Object.keys(actions).reduce((acc, key) => {
     if (typeof actions[key] === 'function') {
-      const context = { state: store.state, getter: store.getters }
+      const context = { state: store.state, getters: store.getters }
       acc[key] = (...args) => actions[key](context, ...args)
     }
     return acc
