@@ -293,7 +293,7 @@ export const has = (path, context) => {
       throw new MissingStoreError(`You're trying to use the method .has('${path}', context?) on a store which doesn't exists: '${name}'`)
     }
   })
-  return _has(teddy, path, context) //resolveContext(context, teddy))
+  return _has(teddy, path, context)
 }
 
 export const get = (path, context) => {
@@ -303,7 +303,7 @@ export const get = (path, context) => {
       throw new MissingStoreError(`You're trying to use the method .get('${path}', context?) on a store which doesn't exists: '${name}'`)
     }
   })
-  return _get(teddy, path, context) //resolveContext(context, teddy))
+  return _get(teddy, path, context)
 }
 
 export const set = (path, value, context) => {
@@ -313,7 +313,7 @@ export const set = (path, value, context) => {
       throw new MissingStoreError(`You're trying to use the method .set('${path}', value, context?) on a store which doesn't exists: '${name}'`)
     }
   })
-  _set(teddy, path, value, context) //resolveContext(context, teddy))
+  _set(teddy, path, value, context)
 }
 
 export const getter = (path, context) => {
