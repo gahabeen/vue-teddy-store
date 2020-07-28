@@ -319,8 +319,6 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods,
           const { handler, path, paths = [], ...options } = watcher;
           // Contains a path
           if (typeof path === 'string') {
-            console.log('>> register watcher', path, makeTeddyGet()(this, resolvePath([name, path])));
-
             VueCompositionMethods.watch(() => makeTeddyGet()(this, resolvePath([name, path])), handler, { deep: true, ...options });
           }
           // Contains paths
@@ -399,13 +397,16 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods,
 
         Vue = VueInstance;
 
-        Object.defineProperty(VueInstance.prototype, '$teddy', {
-          get() {
-            return TeddyInstance.attachTo(this)
-          },
-          enumerable: true,
-          configurable: true,
-        });
+        VueInstance.prototype.$teddy = TeddyInstance;
+
+        // Doesn't bring anything more
+        // Object.defineProperty(VueInstance.prototype, '$teddy', {
+        //   get() {
+        //     return TeddyInstance.attachTo(this)
+        //   },
+        //   enumerable: true,
+        //   configurable: true,
+        // })
       }
       // Vue 3
       /* istanbul ignore next */
@@ -495,7 +496,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods,
         throw new MissingStoreError(`You're trying to use the method .has('${path}', context?) on a store which doesn't exists: '${name}'`)
       }
     });
-    return _has(teddy, path, resolveContext(context, teddy))
+    return _has(teddy, path, context) //resolveContext(context, teddy))
   };
 
   const get$1 = (path, context) => {
@@ -505,7 +506,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods,
         throw new MissingStoreError(`You're trying to use the method .get('${path}', context?) on a store which doesn't exists: '${name}'`)
       }
     });
-    return _get(teddy, path, resolveContext(context, teddy))
+    return _get(teddy, path, context) //resolveContext(context, teddy))
   };
 
   const set$1 = (path, value, context) => {
@@ -515,7 +516,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods,
         throw new MissingStoreError(`You're trying to use the method .set('${path}', value, context?) on a store which doesn't exists: '${name}'`)
       }
     });
-    _set(teddy, path, value, resolveContext(context, teddy));
+    _set(teddy, path, value, context); //resolveContext(context, teddy))
   };
 
   const getter = (path, context) => {
@@ -577,17 +578,17 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods,
     }
   };
 
-  function resolveContext(...contexts) {
-    return contexts.filter(Boolean).reduce((data, context) => {
-      if (context instanceof TeddyStore && context._vueInstance) {
-        return context._vueInstance
-      } else if (objectStringPath.isObject(context)) {
-        return context
-      } else {
-        return data
-      }
-    }, {})
-  }
+  // Is too random as it doesn't keep current instance but rather last instance where $teddy
+  // has been called from
+  // export function resolveContext(...contexts) {
+  //   for (let context of contexts.filter(Boolean)) {
+  //     if (context instanceof TeddyStore && context._vueInstance) {
+  //       return context._vueInstance
+  //     } else if (isObject(context)) {
+  //       return context
+  //     }
+  //   }
+  // }
 
   var others = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -602,8 +603,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods,
     getter: getter,
     setter: setter,
     sync: sync$1,
-    computed: computed,
-    resolveContext: resolveContext
+    computed: computed
   });
 
   const { has: has$2, get: get$2, set: set$2, sync: sync$2, computed: computed$1, setter: setter$1, getter: getter$1, createGetters: createGetters$1, createState: createState$1, MissingStoreError: MissingStoreError$1 } = others;
