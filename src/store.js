@@ -116,8 +116,6 @@ export default class TeddyStore {
         const { handler, path, paths = [], ...options } = watcher
         // Contains a path
         if (typeof path === 'string') {
-          console.log('>> register watcher', path, accessors.makeTeddyGet()(this, utils.resolvePath([name, path])))
-
           watch(() => accessors.makeTeddyGet()(this, utils.resolvePath([name, path])), handler, { deep: true, ...options })
         }
         // Contains paths
@@ -196,13 +194,16 @@ export default class TeddyStore {
 
       Vue = VueInstance
 
-      Object.defineProperty(VueInstance.prototype, '$teddy', {
-        get() {
-          return TeddyInstance.attachTo(this)
-        },
-        enumerable: true,
-        configurable: true,
-      })
+      VueInstance.prototype.$teddy = TeddyInstance
+
+      // Doesn't bring anything more
+      // Object.defineProperty(VueInstance.prototype, '$teddy', {
+      //   get() {
+      //     return TeddyInstance.attachTo(this)
+      //   },
+      //   enumerable: true,
+      //   configurable: true,
+      // })
     }
     // Vue 3
     /* istanbul ignore next */
@@ -292,7 +293,7 @@ export const has = (path, context) => {
       throw new MissingStoreError(`You're trying to use the method .has('${path}', context?) on a store which doesn't exists: '${name}'`)
     }
   })
-  return _has(teddy, path, resolveContext(context, teddy))
+  return _has(teddy, path, context) //resolveContext(context, teddy))
 }
 
 export const get = (path, context) => {
@@ -302,7 +303,7 @@ export const get = (path, context) => {
       throw new MissingStoreError(`You're trying to use the method .get('${path}', context?) on a store which doesn't exists: '${name}'`)
     }
   })
-  return _get(teddy, path, resolveContext(context, teddy))
+  return _get(teddy, path, context) //resolveContext(context, teddy))
 }
 
 export const set = (path, value, context) => {
@@ -312,7 +313,7 @@ export const set = (path, value, context) => {
       throw new MissingStoreError(`You're trying to use the method .set('${path}', value, context?) on a store which doesn't exists: '${name}'`)
     }
   })
-  _set(teddy, path, value, resolveContext(context, teddy))
+  _set(teddy, path, value, context) //resolveContext(context, teddy))
 }
 
 export const getter = (path, context) => {
@@ -374,14 +375,14 @@ export const computed = (definition) => {
   }
 }
 
-export function resolveContext(...contexts) {
-  return contexts.filter(Boolean).reduce((data, context) => {
-    if (context instanceof TeddyStore && context._vueInstance) {
-      return context._vueInstance
-    } else if (isObject(context)) {
-      return context
-    } else {
-      return data
-    }
-  }, {})
-}
+// Is too random as it doesn't keep current instance but rather last instance where $teddy
+// has been called from
+// export function resolveContext(...contexts) {
+//   for (let context of contexts.filter(Boolean)) {
+//     if (context instanceof TeddyStore && context._vueInstance) {
+//       return context._vueInstance
+//     } else if (isObject(context)) {
+//       return context
+//     }
+//   }
+// }

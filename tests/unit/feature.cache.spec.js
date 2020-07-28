@@ -9,7 +9,7 @@ Vue.use(VueCompositionApi)
 import { prefix } from '@/features/cache'
 
 describe('Cache Feature', () => {
-  it.only(`should save the state in cache`, async () => {
+  it(`should save the state in cache`, async () => {
     const localVue = createLocalVue()
     const store = new TeddyStore()
     const storeName = nanoid()
