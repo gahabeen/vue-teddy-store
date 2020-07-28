@@ -1,4 +1,4 @@
-import TeddyStore, { has, MissingStoreError } from '@/index'
+import TeddyStore, { MissingStoreError } from '@/index'
 import VueCompositionApi, { ref } from '@vue/composition-api'
 import { createLocalVue } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
@@ -39,29 +39,29 @@ describe('Store, Accessors [Common]', () => {
       })
     )
 
-    const { has } = store
+    const { has } = store.export()
 
     await flushPromises()
     expect(has(storeName + '.pages.0.title')).toBe(true)
   })
 
-  it(`[globally exported has(path, context?)] should check a path exists`, async () => {
-    const localVue = createLocalVue()
-    const store = new TeddyStore()
+  // it(`[globally exported has(path, context?)] should check a path exists`, async () => {
+  //   const localVue = createLocalVue()
+  //   const store = new TeddyStore()
 
-    const storeName = nanoid()
+  //   const storeName = nanoid()
 
-    localVue.use(
-      store.add(storeName, {
-        state: ref({
-          pages: [{ title: 'Once uppon a time' }],
-        }),
-      })
-    )
+  //   localVue.use(
+  //     store.add(storeName, {
+  //       state: ref({
+  //         pages: [{ title: 'Once uppon a time' }],
+  //       }),
+  //     })
+  //   )
 
-    await flushPromises()
-    expect(has(storeName + '.pages.0.title')).toBe(true)
-  })
+  //   await flushPromises()
+  //   expect(has(storeName + '.pages.0.title')).toBe(true)
+  // })
 
   it(`[has(path, context?)] should return undefined when store doesn't exists`, async () => {
     const store = new TeddyStore()

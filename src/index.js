@@ -1,7 +1,7 @@
 import * as accessors from './accessors'
-import TeddyStore, * as others from './store'
+import TeddyStore, { MissingStoreError, Store } from './store'
 
-const { has, get, set, sync, computed, setter, getter, createGetters, createState, MissingStoreError } = others
+const { has, get, set, sync, computed, setter, getter, createGetters, createState } = new TeddyStore().export({ store: false, boundTo: '$' })
 
 export default TeddyStore
-export { accessors, has, get, set, sync, computed, setter, getter, createGetters, createState, MissingStoreError }
+export { accessors, MissingStoreError, Store, has, get, set, sync, computed, setter, getter, createGetters, createState }

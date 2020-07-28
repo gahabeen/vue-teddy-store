@@ -68,7 +68,7 @@ function afterGetSteps(storeNameHook) {
     const [name, ..._steps] = steps || []
     if (!name) return []
     storeNameHook(name)
-    return ['_stores', name, 'state', ..._steps]
+    return ['state', ..._steps]
   }
 }
 

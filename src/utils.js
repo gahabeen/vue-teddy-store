@@ -22,6 +22,16 @@ export function omit(obj, keys = []) {
   }, {})
 }
 
+export function pick(obj, keys = [], modifier = (v) => v) {
+  let _obj = {}
+  for (let key of keys) {
+    if (keys.includes(key)) {
+      _obj[key] = modifier(obj[key])
+    }
+  }
+  return _obj
+}
+
 export function debounce(fn, wait = 100) {
   let timeout
   return function(...args) {

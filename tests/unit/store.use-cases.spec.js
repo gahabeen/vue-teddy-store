@@ -1,4 +1,4 @@
-import TeddyStore, { has } from '@/index'
+import TeddyStore from '@/index'
 import VueCompositionApi, { ref } from '@vue/composition-api'
 import { createLocalVue, mount } from '@vue/test-utils'
 import { nanoid } from 'nanoid'
@@ -25,7 +25,7 @@ describe('Store, Use Cases [Common]', () => {
       {
         template: `<div>{{$teddy.has('${storeName}.pages.{$route.params.id}.name', this)}}</div>`,
         beforeMount() {
-          expect(has(`${storeName}.pages.{$route.params.id}.name`, this)).toBe(true)
+          expect(store.has(`${storeName}.pages.{$route.params.id}.name`, this)).toBe(true)
         },
       },
       {

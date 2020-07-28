@@ -1,4 +1,4 @@
-import TeddyStore, { createState } from '@/index'
+import TeddyStore from '@/index'
 import VueCompositionApi, { computed } from '@vue/composition-api'
 import { createLocalVue, mount } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
@@ -18,7 +18,7 @@ describe('Store, Creators [Common]', () => {
         template: `<div></div>`,
         computed: {
           state() {
-            return createState({ pages: [{ title: 'Test' }] })
+            return store.createState({ pages: [{ title: 'Test' }] })
           },
         },
       },
@@ -41,7 +41,7 @@ describe('Store, Creators [Common]', () => {
         template: `<div></div>`,
         computed: {
           state() {
-            const state = createState({ pages: [{ title: 'Test' }] })
+            const state = store.createState({ pages: [{ title: 'Test' }] })
             state.value.pages[0].title = 'NewName'
             return state
           },
