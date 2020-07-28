@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1595960768531" clover="3.2.0">
-  <project timestamp="1595960768531" name="All files">
-    <metrics statements="153" coveredstatements="138" conditionals="91" coveredconditionals="66" methods="54" coveredmethods="48" elements="298" coveredelements="252" complexity="0" loc="153" ncloc="153" packages="1" files="1" classes="1"/>
+<coverage generated="1595960977813" clover="3.2.0">
+  <project timestamp="1595960977813" name="All files">
+    <metrics statements="153" coveredstatements="138" conditionals="95" coveredconditionals="70" methods="54" coveredmethods="48" elements="302" coveredelements="256" complexity="0" loc="153" ncloc="153" packages="1" files="1" classes="1"/>
     <file name="store.js" path="C:\Users\desse\Documents\github\projects\vue-teddy-store\src\store.js">
-      <metrics statements="153" coveredstatements="138" conditionals="91" coveredconditionals="66" methods="54" coveredmethods="48"/>
+      <metrics statements="153" coveredstatements="138" conditionals="95" coveredconditionals="70" methods="54" coveredmethods="48"/>
       <line num="14" count="3" type="stmt"/>
       <line num="15" count="3" type="stmt"/>
       <line num="21" count="59" type="stmt"/>
@@ -131,10 +131,10 @@
       <line num="316" count="21" type="stmt"/>
       <line num="319" count="11" type="stmt"/>
       <line num="320" count="20" type="stmt"/>
-      <line num="321" count="20" type="stmt"/>
+      <line num="321" count="20" type="cond" truecount="2" falsecount="0"/>
       <line num="325" count="11" type="stmt"/>
       <line num="326" count="20" type="stmt"/>
-      <line num="327" count="12" type="stmt"/>
+      <line num="327" count="12" type="cond" truecount="2" falsecount="0"/>
       <line num="331" count="11" type="stmt"/>
       <line num="332" count="10" type="stmt"/>
       <line num="333" count="14" type="stmt"/>

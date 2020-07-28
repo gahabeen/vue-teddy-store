@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.1.34
+  * vue-teddy-store v0.1.35
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -520,13 +520,13 @@ const set$1 = (path, value, context) => {
 
 const getter = (path, context) => {
   return function() {
-    return get$1(path, context)
+    return get$1(path, context || this)
   }
 };
 
 const setter = (path, context) => {
   return function(value) {
-    set$1(path, value, context);
+    set$1(path, value, context || this);
   }
 };
 
