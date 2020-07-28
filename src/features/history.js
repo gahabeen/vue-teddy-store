@@ -1,4 +1,4 @@
-import { reactive, watch } from'../api'
+import { reactive, watch } from'@vue/composition-api'
 
 export default {
   handle({ store }) {

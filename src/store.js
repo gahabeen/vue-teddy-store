@@ -1,9 +1,11 @@
 import * as VueCompositionMethods from '@vue/composition-api'
+import { isRef, ref, watch } from '@vue/composition-api'
 import { isObject } from 'object-string-path'
-import { isRef, ref, watch } from './api'
-import * as objectAccess from './object-access'
-import * as plugins from './plugins/index'
+import * as accessors from './accessors'
+import * as features from './features/index'
 import * as utils from './utils'
+import { registerForDevtools } from './devtools'
+import __Vue from 'vue'
 
 let Vue // binding to Vue
 
@@ -15,10 +17,14 @@ export class MissingStoreError extends Error {
 }
 
 export default class TeddyStore {
-  constructor() {
+  constructor(options) {
+    this._options = {
+      devtools: __Vue.config.devtools,
+      ...(options || {}),
+    }
     this._vueInstance = null
     this._stores = {}
-    this._plugins = plugins
+    this._features = features
 
     // Add default store
     this.add('@', { state: {} })
@@ -26,44 +32,112 @@ export default class TeddyStore {
 
   add(name, store) {
     store = store || {}
-    const others = utils.omit(store, ['state', 'getters', 'actions', 'watchers'])
 
-    this._stores[name] = {
-      state: createState(store.state),
-      ...createGetters(store.getters),
-      ...(store.actions || {}),
-      ...others,
-    }
-
+    this._stores[name] = {}
     this[name] = this._stores[name]
 
-    const watchers = []
-    if (Array.isArray(store.watchers)) {
-      watchers.push(...store.watchers)
-    } else if (store.watcher) {
-      watchers.push(store.watcher)
+    this.addState(name, store.state)
+    this.addGetters(name, store.getters)
+    this.addActions(name, store.actions)
+    this.addStoreProperties(name, utils.omit(store, ['state', 'getters', 'actions', 'watcher', 'watchers', 'devtools']))
+    this.registerWatchers(name, store.watcher)
+    this.registerWatchers(name, store.watchers)
+    if (store.devtools || this._options.devtools) {
+      this.registerForDevtools(name)
     }
 
-    for (let watcher of watchers) {
+    return this
+  }
+
+  addStoreProperties(name, properties, options) {
+    const { allowOverriding = false, alsoAtPath = null } = options || {}
+    if (!this._stores[name]) this._stores[name] = {}
+    for (const propertyKey of Object.keys(properties || {})) {
+      if (propertyKey in this._stores[name] && !allowOverriding) {
+        console.warn(`addStoreProperties('${name}',...) - Couldn't override property ${propertyKey} on store '${name}'`)
+        continue
+      }
+      this._stores[name][propertyKey] = properties[propertyKey]
+      if (typeof alsoAtPath === 'string') {
+        if (!this._stores[name][alsoAtPath]) this._stores[name][alsoAtPath] = {}
+        this._stores[name][alsoAtPath][propertyKey] = this._stores[name][propertyKey]
+      }
+    }
+
+    return this
+  }
+
+  addState(name, state) {
+    if (!this._stores[name]) this._stores[name] = {}
+    const _state = createState(state)
+    this._stores[name]._state = _state
+
+    Object.defineProperty(this._stores[name], 'state', {
+      get: () => _state.value,
+      set: (newState) => {
+        _state.value = newState
+      },
+      enumerable: true,
+    })
+
+    return this
+  }
+
+  addGetters(name, getters) {
+    this.addStoreProperties(name, createGetters(getters), { alsoAtPath: '_getters' })
+    return this
+  }
+
+  addActions(name, actions) {
+    this.addStoreProperties(name, createActions(this._stores[name], actions), { alsoAtPath: '_actions' })
+    return this
+  }
+
+  registerWatchers(name, watchers) {
+    const _watchers = []
+    if (Array.isArray(watchers)) {
+      _watchers.push(...watchers)
+    } else if (watchers) {
+      _watchers.push(watchers)
+    }
+
+    // If no store is registered at this name yet
+    if (!this.exists(name)) return
+    // If no watchers
+    if (_watchers.length === 0) return
+
+    for (let watcher of _watchers) {
+      // Watcher is a function
       if (typeof watcher === 'function') {
-        watch(() => this._stores[name].state.value, watcher, { deep: true })
-      } else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
+        watch(() => this._stores[name].state, watcher, { deep: true })
+      }
+      // Watcher is an object definition with a .handler()
+      else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
         const { handler, path, paths = [], ...options } = watcher
-        if (path) {
-          watch(() => objectAccess.makeTeddyGet()(this, utils.resolvePath([name, path])), handler, { deep: true, ...options })
-        } else if (paths.length > 0) {
+        // Contains a path
+        if (typeof path === 'string') {
+          watch(() => accessors.makeTeddyGet()(this, utils.resolvePath([name, path])), handler, { deep: true, ...options })
+        }
+        // Contains paths
+        else if (paths.length > 0) {
           watch(
-            paths.map((p) => () => objectAccess.makeTeddyGet()(this, utils.resolvePath([name, p]))),
+            paths.map((p) => () => accessors.makeTeddyGet()(this, utils.resolvePath([name, p]))),
             handler,
             { deep: true, ...options }
           )
-        } else {
-          watch(() => this._stores[name].state.value, handler, { deep: true, ...options })
+        }
+        // Global watcher
+        else {
+          watch(() => this._stores[name].state, handler, { deep: true, ...options })
         }
       }
     }
 
     return this
+  }
+
+  registerForDevtools(name) {
+    return registerForDevtools(name, this._stores[name])
   }
 
   exists(name) {
@@ -81,21 +155,21 @@ export default class TeddyStore {
     }
   }
 
-  use(plugin = {}) {
-    if (typeof plugin.install === 'function') {
-      plugin.install(this)
+  use(feature = {}) {
+    if (typeof feature.install === 'function') {
+      feature.install(this)
     }
-    if (typeof plugin.handle === 'function') {
-      Object.keys(this._stores).map((name) => plugin.handle.call(this, { name, store: this._stores[name] }))
+    if (typeof feature.handle === 'function') {
+      Object.keys(this._stores).map((name) => feature.handle.call(this, { name, store: this._stores[name] }))
     }
     return this
   }
 
-  activate(pluginNames = []) {
-    if (!Array.isArray(pluginNames)) pluginNames = [pluginNames]
-    for (let pluginName of pluginNames) {
-      if (pluginName in this._plugins) {
-        this.use(this._plugins[pluginName])
+  activate(featureNames = []) {
+    if (!Array.isArray(featureNames)) featureNames = [featureNames]
+    for (let featureName of featureNames) {
+      if (featureName in this._features) {
+        this.use(this._features[featureName])
       }
     }
     return this
@@ -123,15 +197,17 @@ export default class TeddyStore {
         get() {
           return TeddyInstance.attachTo(this)
         },
+        enumerable: true,
         configurable: true,
       })
     }
     // Vue 3
     /* istanbul ignore next */
     else if (VueInstance.version.startsWith('3')) {
-      const [app, options] = args
+      const [app] = args
 
-      app.provide('teddy', options)
+      app.provide('$teddy')
+
       Object.defineProperty(app.config.globalProperties, '$teddy', {
         get() {
           return TeddyInstance.attachTo(this)
@@ -194,9 +270,20 @@ export const createGetters = (getters) => {
   }, {})
 }
 
+export const createActions = (store, actions) => {
+  actions = actions || {}
+  return Object.keys(actions).reduce((acc, key) => {
+    if (typeof actions[key] === 'function') {
+      const context = { state: store.state, getter: store.getters }
+      acc[key] = (...args) => actions[key](context, ...args)
+    }
+    return acc
+  }, {})
+}
+
 export const has = (path, context) => {
   const teddy = Vue.prototype.$teddy
-  const _has = objectAccess.makeTeddyHas((name) => {
+  const _has = accessors.makeTeddyHas((name) => {
     if (!teddy.exists(name)) {
       throw new MissingStoreError(`You're trying to use the method .has('${path}', context?) on a store which doesn't exists: '${name}'`)
     }
@@ -206,7 +293,7 @@ export const has = (path, context) => {
 
 export const get = (path, context) => {
   const teddy = Vue.prototype.$teddy
-  const _get = objectAccess.makeTeddyGet((name) => {
+  const _get = accessors.makeTeddyGet((name) => {
     if (!teddy.exists(name)) {
       throw new MissingStoreError(`You're trying to use the method .get('${path}', context?) on a store which doesn't exists: '${name}'`)
     }
@@ -216,7 +303,7 @@ export const get = (path, context) => {
 
 export const set = (path, value, context) => {
   const teddy = Vue.prototype.$teddy
-  const _set = objectAccess.makeTeddySet((name) => {
+  const _set = accessors.makeTeddySet((name) => {
     if (!teddy.exists(name)) {
       throw new MissingStoreError(`You're trying to use the method .set('${path}', value, context?) on a store which doesn't exists: '${name}'`)
     }

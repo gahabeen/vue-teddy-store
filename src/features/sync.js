@@ -1,4 +1,3 @@
-import { reactive } from '../api'
 import { prefix } from './cache'
 
 export default {
@@ -7,7 +6,7 @@ export default {
     if (window) {
       window.addEventListener('storage', (e) => {
         if (e.key === prefix(name)) {
-          store.state = reactive({ ...store.state, ...JSON.parse(e.newValue) })
+          store.state = { ...store.state, ...JSON.parse(e.newValue) }
         }
       })
     }

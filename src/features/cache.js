@@ -1,4 +1,4 @@
-import { watch } from '../api'
+import { watch } from '@vue/composition-api'
 
 export const prefix = (name) => `teddy:store:${name}`
 export default {
@@ -12,7 +12,7 @@ export default {
       if (cached) store.state = { ...store.state, ...JSON.parse(cached) }
       // Watch for mutations, save them
       watch(
-        store.state,
+        () => store.state,
         (newState, oldState) => {
           if (newState !== oldState) {
             localStorage.setItem(prefix(name), JSON.stringify(newState))
