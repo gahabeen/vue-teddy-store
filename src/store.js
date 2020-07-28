@@ -318,13 +318,13 @@ export const set = (path, value, context) => {
 
 export const getter = (path, context) => {
   return function() {
-    return get(path, context)
+    return get(path, context || this)
   }
 }
 
 export const setter = (path, context) => {
   return function(value) {
-    set(path, value, context)
+    set(path, value, context || this)
   }
 }
 
