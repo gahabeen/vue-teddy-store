@@ -3,8 +3,10 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods) {
+var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods, __Vue) {
   'use strict';
+
+  __Vue = __Vue && Object.prototype.hasOwnProperty.call(__Vue, 'default') ? __Vue['default'] : __Vue;
 
   function isComputed(obj) {
     if (!objectStringPath.isObject(obj) || (objectStringPath.isObject(obj) && !('value' in obj))) {
@@ -141,7 +143,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
     hasProp,
   });
 
-  var objectAccess = /*#__PURE__*/Object.freeze({
+  var accessors = /*#__PURE__*/Object.freeze({
     __proto__: null,
     makeTeddySet: makeTeddySet,
     makeTeddyHas: makeTeddyHas,
@@ -163,7 +165,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
         if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
         // Watch for mutations, save them
         VueCompositionMethods.watch(
-          store.state,
+          () => store.state,
           (newState, oldState) => {
             if (newState !== oldState) {
               localStorage.setItem(prefix(name), JSON.stringify(newState));
@@ -194,19 +196,91 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
       if (window) {
         window.addEventListener('storage', (e) => {
           if (e.key === prefix(name)) {
-            store.state = VueCompositionMethods.reactive({ ...store.state, ...JSON.parse(e.newValue) });
+            store.state = { ...store.state, ...JSON.parse(e.newValue) };
           }
         });
       }
     },
   };
 
-  var plugins = /*#__PURE__*/Object.freeze({
+  var features = /*#__PURE__*/Object.freeze({
     __proto__: null,
     cache: cache,
     history: history,
     sync: sync
   });
+
+  const target = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : { __VUE_DEVTOOLS_GLOBAL_HOOK__: undefined };
+  const devtoolHook = target.__VUE_DEVTOOLS_GLOBAL_HOOK__;
+
+  const listenedPaths = [];
+
+  function registerForDevtools(name, store) {
+    if (!devtoolHook) {
+      return
+    }
+
+    function listen(state, parentKey = '') {
+      for (const key in state) {
+        const path = `${parentKey}${parentKey ? '.' : ''}${key}`;
+
+        if (listenedPaths.includes(path)) {
+          continue
+        }
+
+        listenedPaths.push(path);
+
+        const registerChildren = (child) => {
+          if (typeof child === 'object') {
+            listen(child, path);
+          }
+        };
+
+        store.registerWatchers(name, {
+          path,
+          handler(value) {
+            registerChildren(value);
+
+            devtoolHook.emit(
+              'vuex:mutation',
+              {
+                type: 'change',
+                payload: {
+                  key: path,
+                  value,
+                },
+              },
+              store.state
+            );
+          },
+        });
+
+        registerChildren(state[key]);
+      }
+    }
+
+    Object.defineProperty(store, 'getters', {
+      get: () => store._getters,
+    });
+
+    const wrappedStore = {
+      ...store,
+      _devtoolHook: devtoolHook,
+      _vm: { $options: { computed: {} } },
+      _mutations: {},
+      replaceState: () => {},
+    };
+
+    devtoolHook.emit('vuex:init', wrappedStore);
+
+    devtoolHook.on('vuex:travel-to-state', (targetState) => {
+      // TODO: this doesnt reset keys added after targetState
+      Object.assign(store.state, targetState);
+    });
+
+    // listen for changes to emit vuex:mutations
+    listen(store.state);
+  }
 
   let Vue; // binding to Vue
 
@@ -218,10 +292,14 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
   }
 
   class TeddyStore {
-    constructor() {
+    constructor(options) {
+      this._options = {
+        devtools: __Vue.config.devtools,
+        ...(options || {}),
+      };
       this._vueInstance = null;
       this._stores = {};
-      this._plugins = plugins;
+      this._features = features;
 
       // Add default store
       this.add('@', { state: {} });
@@ -229,44 +307,112 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
 
     add(name, store) {
       store = store || {};
-      const others = omit(store, ['state', 'getters', 'actions', 'watchers']);
 
-      this._stores[name] = {
-        state: createState(store.state),
-        ...createGetters(store.getters),
-        ...(store.actions || {}),
-        ...others,
-      };
-
+      this._stores[name] = {};
       this[name] = this._stores[name];
 
-      const watchers = [];
-      if (Array.isArray(store.watchers)) {
-        watchers.push(...store.watchers);
-      } else if (store.watcher) {
-        watchers.push(store.watcher);
+      this.addState(name, store.state);
+      this.addGetters(name, store.getters);
+      this.addActions(name, store.actions);
+      this.addStoreProperties(name, omit(store, ['state', 'getters', 'actions', 'watcher', 'watchers', 'devtools']));
+      this.registerWatchers(name, store.watcher);
+      this.registerWatchers(name, store.watchers);
+      if (store.devtools || this._options.devtools) {
+        this.registerForDevtools(name);
       }
 
-      for (let watcher of watchers) {
+      return this
+    }
+
+    addStoreProperties(name, properties, options) {
+      const { allowOverriding = false, alsoAtPath = null } = options || {};
+      if (!this._stores[name]) this._stores[name] = {};
+      for (const propertyKey of Object.keys(properties || {})) {
+        if (propertyKey in this._stores[name] && !allowOverriding) {
+          console.warn(`addStoreProperties('${name}',...) - Couldn't override property ${propertyKey} on store '${name}'`);
+          continue
+        }
+        this._stores[name][propertyKey] = properties[propertyKey];
+        if (typeof alsoAtPath === 'string') {
+          if (!this._stores[name][alsoAtPath]) this._stores[name][alsoAtPath] = {};
+          this._stores[name][alsoAtPath][propertyKey] = this._stores[name][propertyKey];
+        }
+      }
+
+      return this
+    }
+
+    addState(name, state) {
+      if (!this._stores[name]) this._stores[name] = {};
+      const _state = createState(state);
+      this._stores[name]._state = _state;
+
+      Object.defineProperty(this._stores[name], 'state', {
+        get: () => _state.value,
+        set: (newState) => {
+          _state.value = newState;
+        },
+        enumerable: true,
+      });
+
+      return this
+    }
+
+    addGetters(name, getters) {
+      this.addStoreProperties(name, createGetters(getters), { alsoAtPath: '_getters' });
+      return this
+    }
+
+    addActions(name, actions) {
+      this.addStoreProperties(name, createActions(this._stores[name], actions), { alsoAtPath: '_actions' });
+      return this
+    }
+
+    registerWatchers(name, watchers) {
+      const _watchers = [];
+      if (Array.isArray(watchers)) {
+        _watchers.push(...watchers);
+      } else if (watchers) {
+        _watchers.push(watchers);
+      }
+
+      // If no store is registered at this name yet
+      if (!this.exists(name)) return
+      // If no watchers
+      if (_watchers.length === 0) return
+
+      for (let watcher of _watchers) {
+        // Watcher is a function
         if (typeof watcher === 'function') {
-          VueCompositionMethods.watch(() => this._stores[name].state.value, watcher, { deep: true });
-        } else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
+          VueCompositionMethods.watch(() => this._stores[name].state, watcher, { deep: true });
+        }
+        // Watcher is an object definition with a .handler()
+        else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
           const { handler, path, paths = [], ...options } = watcher;
-          if (path) {
+          // Contains a path
+          if (typeof path === 'string') {
             VueCompositionMethods.watch(() => makeTeddyGet()(this, resolvePath([name, path])), handler, { deep: true, ...options });
-          } else if (paths.length > 0) {
+          }
+          // Contains paths
+          else if (paths.length > 0) {
             VueCompositionMethods.watch(
               paths.map((p) => () => makeTeddyGet()(this, resolvePath([name, p]))),
               handler,
               { deep: true, ...options }
             );
-          } else {
-            VueCompositionMethods.watch(() => this._stores[name].state.value, handler, { deep: true, ...options });
+          }
+          // Global watcher
+          else {
+            VueCompositionMethods.watch(() => this._stores[name].state, handler, { deep: true, ...options });
           }
         }
       }
 
       return this
+    }
+
+    registerForDevtools(name) {
+      return registerForDevtools(name, this._stores[name])
     }
 
     exists(name) {
@@ -284,21 +430,21 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
       }
     }
 
-    use(plugin = {}) {
-      if (typeof plugin.install === 'function') {
-        plugin.install(this);
+    use(feature = {}) {
+      if (typeof feature.install === 'function') {
+        feature.install(this);
       }
-      if (typeof plugin.handle === 'function') {
-        Object.keys(this._stores).map((name) => plugin.handle.call(this, { name, store: this._stores[name] }));
+      if (typeof feature.handle === 'function') {
+        Object.keys(this._stores).map((name) => feature.handle.call(this, { name, store: this._stores[name] }));
       }
       return this
     }
 
-    activate(pluginNames = []) {
-      if (!Array.isArray(pluginNames)) pluginNames = [pluginNames];
-      for (let pluginName of pluginNames) {
-        if (pluginName in this._plugins) {
-          this.use(this._plugins[pluginName]);
+    activate(featureNames = []) {
+      if (!Array.isArray(featureNames)) featureNames = [featureNames];
+      for (let featureName of featureNames) {
+        if (featureName in this._features) {
+          this.use(this._features[featureName]);
         }
       }
       return this
@@ -326,15 +472,17 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
           get() {
             return TeddyInstance.attachTo(this)
           },
+          enumerable: true,
           configurable: true,
         });
       }
       // Vue 3
       /* istanbul ignore next */
       else if (VueInstance.version.startsWith('3')) {
-        const [app, options] = args;
+        const [app] = args;
 
-        app.provide('teddy', options);
+        app.provide('$teddy');
+
         Object.defineProperty(app.config.globalProperties, '$teddy', {
           get() {
             return TeddyInstance.attachTo(this)
@@ -392,6 +540,17 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
         acc[key] = getters[key];
       } else if (typeof getters[key] === 'function') {
         acc[key] = computed(getters[key]);
+      }
+      return acc
+    }, {})
+  };
+
+  const createActions = (store, actions) => {
+    actions = actions || {};
+    return Object.keys(actions).reduce((acc, key) => {
+      if (typeof actions[key] === 'function') {
+        const context = { state: store.state, getter: store.getters };
+        acc[key] = (...args) => actions[key](context, ...args);
       }
       return acc
     }, {})
@@ -504,6 +663,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
     'default': TeddyStore,
     createState: createState,
     createGetters: createGetters,
+    createActions: createActions,
     has: has$1,
     get: get$1,
     set: set$1,
@@ -517,6 +677,7 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
   const { has: has$2, get: get$2, set: set$2, sync: sync$2, computed: computed$1, setter: setter$1, getter: getter$1, createGetters: createGetters$1, createState: createState$1, MissingStoreError: MissingStoreError$1 } = others;
 
   exports.MissingStoreError = MissingStoreError$1;
+  exports.accessors = accessors;
   exports.computed = computed$1;
   exports.createGetters = createGetters$1;
   exports.createState = createState$1;
@@ -524,11 +685,10 @@ var VueTeddyStore = (function (exports, objectStringPath, VueCompositionMethods)
   exports.get = get$2;
   exports.getter = getter$1;
   exports.has = has$2;
-  exports.objectAccess = objectAccess;
   exports.set = set$2;
   exports.setter = setter$1;
   exports.sync = sync$2;
 
   return exports;
 
-}({}, objectStringPath, vueCompositionApi));
+}({}, objectStringPath, vueCompositionApi, Vue));
