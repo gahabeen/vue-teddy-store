@@ -122,7 +122,7 @@ describe('Store, Accessors [Vue 2]', () => {
     )
     await flushPromises()
 
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('Another title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('Another title')
   })
 
   it(`[exported set(path, context?)] should set a value at path`, async () => {
@@ -153,7 +153,7 @@ describe('Store, Accessors [Vue 2]', () => {
     )
     await flushPromises()
 
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('Another title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('Another title')
   })
 
   it(`[globally exported set(path, context?)] should set a value at path`, async () => {
@@ -182,7 +182,7 @@ describe('Store, Accessors [Vue 2]', () => {
     )
     await flushPromises()
 
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('Another title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('Another title')
   })
 
   it(`[getter(path, context?)] should provide a getter for a simple value`, async () => {
@@ -214,7 +214,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('Once uppon a time')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('Once uppon a time')
   })
 
   it(`[exported getter(path, context?)] should provide a getter for a simple value`, async () => {
@@ -248,7 +248,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('Once uppon a time')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('Once uppon a time')
   })
 
   it(`[globally exported getter(path, context?)] should provide a getter for a simple value`, async () => {
@@ -280,7 +280,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toMatch('Once uppon a time')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('Once uppon a time')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('Once uppon a time')
   })
 
   it(`[setter(path, context?)] should provide a setter for a simple value`, async () => {
@@ -302,7 +302,7 @@ describe('Store, Accessors [Vue 2]', () => {
         computed: {
           pages0: {
             get() {
-              return this.$teddy.stores[storeName].state.value.pages[0]
+              return this.$teddy.stores[storeName].state.pages[0]
             },
             set: store.setter(storeName + '.pages.0'),
           },
@@ -318,7 +318,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toEqual('Brand new title')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toEqual('Brand new title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toEqual('Brand new title')
   })
 
   it(`[exported setter(path, context?)] should provide a setter for a simple value`, async () => {
@@ -342,7 +342,7 @@ describe('Store, Accessors [Vue 2]', () => {
         computed: {
           pages0: {
             get() {
-              return this.$teddy.stores[storeName].state.value.pages[0]
+              return this.$teddy.stores[storeName].state.pages[0]
             },
             set: setter(storeName + '.pages.0'),
           },
@@ -358,7 +358,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toEqual('Brand new title')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toEqual('Brand new title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toEqual('Brand new title')
   })
 
   it(`[globally exported setter(path, context?)] should provide a setter for a simple value`, async () => {
@@ -380,7 +380,7 @@ describe('Store, Accessors [Vue 2]', () => {
         computed: {
           pages0: {
             get() {
-              return this.$teddy.stores[storeName].state.value.pages[0]
+              return this.$teddy.stores[storeName].state.pages[0]
             },
             set: setter(storeName + '.pages.0'),
           },
@@ -396,7 +396,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toEqual('Brand new title')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toEqual('Brand new title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toEqual('Brand new title')
   })
 
   it(`[sync(path (as string), context?)] should provide a computed property to get/set a simple value`, async () => {
@@ -429,7 +429,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toMatch('New title')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('New title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('New title')
   })
 
   it(`[exported sync(path (as string), context?)] should provide a computed property to get/set a simple value`, async () => {
@@ -463,7 +463,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toMatch('New title')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('New title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('New title')
   })
 
   it(`[globally exported sync(path (as string), context?)] should provide a computed property to get/set a simple value`, async () => {
@@ -496,7 +496,7 @@ describe('Store, Accessors [Vue 2]', () => {
     await flushPromises()
 
     expect(wrapper.vm.pages0.title).toMatch('New title')
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('New title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('New title')
   })
 
   it(`[sync(path (as array), context?)] should provide an object of computed get/set properties`, async () => {

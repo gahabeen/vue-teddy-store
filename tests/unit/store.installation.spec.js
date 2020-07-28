@@ -45,7 +45,7 @@ describe('Store, Installation [Common]', () => {
     )
     await flushPromises()
 
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('Once uppon a time')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('Once uppon a time')
   })
 
   it(`[add(<name>, <store>)] should provide a computed { state } as a computed value for a module`, async () => {
@@ -69,10 +69,10 @@ describe('Store, Installation [Common]', () => {
     )
     await flushPromises()
 
-    wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title = 'New title'
+    wrapper.vm.$teddy.stores[storeName].state.pages[0].title = 'New title'
     await flushPromises()
 
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('New title')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('New title')
   })
 
   it(`[add(<name>, <store>)] should register the watchers array`, async () => {
@@ -112,10 +112,10 @@ describe('Store, Installation [Common]', () => {
     )
     await flushPromises()
 
-    wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title = 'Other title'
+    wrapper.vm.$teddy.stores[storeName].state.pages[0].title = 'Other title'
     await flushPromises()
 
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.watched).toEqual(2)
+    expect(wrapper.vm.$teddy.stores[storeName].state.watched).toEqual(2)
   })
 
   it(`[add(<name>, <store>)] should register a general watcher object`, async () => {
@@ -151,7 +151,7 @@ describe('Store, Installation [Common]', () => {
     )
     await flushPromises()
 
-    wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title = 'Other title'
+    wrapper.vm.$teddy.stores[storeName].state.pages[0].title = 'Other title'
     await flushPromises()
 
     expect(hit).toEqual(true)
@@ -187,7 +187,7 @@ describe('Store, Installation [Common]', () => {
     )
     await flushPromises()
 
-    wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title = 'Other title'
+    wrapper.vm.$teddy.stores[storeName].state.pages[0].title = 'Other title'
     await flushPromises()
 
     expect(hit).toEqual(true)
@@ -230,16 +230,16 @@ describe('Store, Installation [Common]', () => {
     )
     await flushPromises()
 
-    wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title = 'Other title'
+    wrapper.vm.$teddy.stores[storeName].state.pages[0].title = 'Other title'
     await flushPromises()
 
-    wrapper.vm.$teddy.stores[storeName].state.value.pages[0].subline = 'Other subline'
+    wrapper.vm.$teddy.stores[storeName].state.pages[0].subline = 'Other subline'
     await flushPromises()
 
     expect(hit).toEqual(2)
   })
 
-  it(`[use(<plugin>)] should allow watching mutations via a plugin`, async () => {
+  it(`[use(<feature>)] should allow watching mutations via a feature`, async () => {
     const localVue = createLocalVue()
     const store = new TeddyStore()
     const storeName = nanoid()
@@ -257,7 +257,7 @@ describe('Store, Installation [Common]', () => {
               store.state,
               (newState) => {
                 if (name === storeName) {
-                  store.state.value.pages[0].title = newState.pages[0].title.toUpperCase()
+                  store.state.pages[0].title = newState.pages[0].title.toUpperCase()
                 }
               },
               { immediate: true, deep: true }
@@ -276,7 +276,7 @@ describe('Store, Installation [Common]', () => {
     )
     await flushPromises()
 
-    expect(wrapper.vm.$teddy.stores[storeName].state.value.pages[0].title).toMatch('ONCE UPPON A TIME')
+    expect(wrapper.vm.$teddy.stores[storeName].state.pages[0].title).toMatch('ONCE UPPON A TIME')
   })
 
   it(`should have its stores also availabe as root properties`, async () => {

@@ -6,10 +6,10 @@ import Vue from 'vue'
 import TeddyStore from '@/index'
 Vue.use(VueCompositionApi)
 
-import { prefix } from '@/plugins/cache'
+import { prefix } from '@/features/cache'
 
-describe('Cache Plugin', () => {
-  it(`should save the state in cache`, async () => {
+describe('Cache Feature', () => {
+  it.only(`should save the state in cache`, async () => {
     const localVue = createLocalVue()
     const store = new TeddyStore()
     const storeName = nanoid()
@@ -28,6 +28,6 @@ describe('Cache Plugin', () => {
     const wrapper = mount({ template: `<div></div>` }, { localVue })
     await flushPromises()
     await flushPromises()
-    expect(JSON.parse(window.localStorage.getItem(prefix(storeName)))).toEqual(wrapper.vm.$teddy.stores[storeName].state.value)
+    expect(JSON.parse(window.localStorage.getItem(prefix(storeName)))).toEqual(wrapper.vm.$teddy.stores[storeName].state)
   })
 })
