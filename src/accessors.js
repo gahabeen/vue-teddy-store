@@ -63,37 +63,28 @@ function hasProp(obj, key) {
   }
 }
 
-function afterGetSteps(storeNameHook) {
-  return (steps) => {
-    const [name, ..._steps] = steps || []
-    if (!name) return []
-    storeNameHook(name)
-    return ['state', ..._steps]
-  }
+function afterGetSteps(steps = []) {
+  return ['_state', ...steps]
 }
 
-export const makeTeddySet = (storeNameHook = (name) => name) =>
-  makeSet({
-    setProp,
-    getProp,
-    hasProp,
-    afterGetSteps: afterGetSteps(storeNameHook),
-  })
+export const teddySet = makeSet({
+  setProp,
+  getProp,
+  hasProp,
+  afterGetSteps,
+})
 
-export const makeTeddyHas = (storeNameHook = (name) => name) => {
-  return makeHas({
-    getProp,
-    hasProp,
-    afterGetSteps: afterGetSteps(storeNameHook),
-  })
-}
+export const teddyHas = makeHas({
+  getProp,
+  hasProp,
+  afterGetSteps,
+})
 
-export const makeTeddyGet = (storeNameHook = (name) => name) =>
-  makeGet({
-    getProp,
-    hasProp,
-    afterGetSteps: afterGetSteps(storeNameHook),
-  })
+export const teddyGet = makeGet({
+  getProp,
+  hasProp,
+  afterGetSteps,
+})
 
 export const set = makeSet({
   setProp,

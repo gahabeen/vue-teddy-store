@@ -3,9 +3,9 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import { isObject, makeGet, isValidKey, makeSet, makeHas } from 'object-string-path';
-import { watch, reactive, isRef, ref, computed as computed$2 } from '@vue/composition-api';
-import __Vue from 'vue';
+import { isObject, makeSet, makeHas, makeGet, isValidKey } from 'object-string-path';
+import Vue from 'vue';
+import VueCompositionMethods__default, { ref, isRef, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 
 function isComputed(obj) {
   if (!isObject(obj) || (isObject(obj) && !('value' in obj))) {
@@ -14,15 +14,6 @@ function isComputed(obj) {
     const desc = Object.getOwnPropertyDescriptor(obj, 'value');
     return typeof desc.get === 'function' // && typeof desc.set === 'function'
   }
-}
-
-function omit(obj, keys = []) {
-  return Object.keys(obj).reduce((acc, key) => {
-    if (!keys.includes(key)) {
-      acc[key] = obj[key];
-    }
-    return acc
-  }, {})
 }
 
 function resolvePath(arr) {
@@ -94,37 +85,28 @@ function hasProp(obj, key) {
   }
 }
 
-function afterGetSteps(storeNameHook) {
-  return (steps) => {
-    const [name, ..._steps] = steps || [];
-    if (!name) return []
-    storeNameHook(name);
-    return ['_stores', name, 'state', ..._steps]
-  }
+function afterGetSteps(steps = []) {
+  return ['_state', ...steps]
 }
 
-const makeTeddySet = (storeNameHook = (name) => name) =>
-  makeSet({
-    setProp,
-    getProp,
-    hasProp,
-    afterGetSteps: afterGetSteps(storeNameHook),
-  });
+const teddySet = makeSet({
+  setProp,
+  getProp,
+  hasProp,
+  afterGetSteps,
+});
 
-const makeTeddyHas = (storeNameHook = (name) => name) => {
-  return makeHas({
-    getProp,
-    hasProp,
-    afterGetSteps: afterGetSteps(storeNameHook),
-  })
-};
+const teddyHas = makeHas({
+  getProp,
+  hasProp,
+  afterGetSteps,
+});
 
-const makeTeddyGet = (storeNameHook = (name) => name) =>
-  makeGet({
-    getProp,
-    hasProp,
-    afterGetSteps: afterGetSteps(storeNameHook),
-  });
+const teddyGet = makeGet({
+  getProp,
+  hasProp,
+  afterGetSteps,
+});
 
 const set = makeSet({
   setProp,
@@ -144,397 +126,222 @@ const get = makeGet({
 
 var accessors = /*#__PURE__*/Object.freeze({
   __proto__: null,
-  makeTeddySet: makeTeddySet,
-  makeTeddyHas: makeTeddyHas,
-  makeTeddyGet: makeTeddyGet,
+  teddySet: teddySet,
+  teddyHas: teddyHas,
+  teddyGet: teddyGet,
   set: set,
   has: has,
   get: get
 });
 
-const prefix = (name) => `teddy:store:${name}`;
-var cache = {
-  handle({ name, store }) {
-    /* istanbul ignore next */
-    const localStorage = window.localStorage || global.localStorage || {};
-    /* istanbul ignore next */
-    if (localStorage) {
-      // Fetched saved state when exists
-      const cached = localStorage.getItem(prefix(name));
-      if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
-      // Watch for mutations, save them
-      watch(
-        () => store.state,
-        (newState, oldState) => {
-          if (newState !== oldState) {
-            localStorage.setItem(prefix(name), JSON.stringify(newState));
-          }
-        },
-        { immediate: true, deep: true }
-      );
-    }
-  },
-};
+Vue.use(VueCompositionMethods__default);
 
-var history = {
-  handle({ store }) {
-    store._history = reactive([]);
-    watch(
-      store.state,
-      (newState) => {
-        store._history.push(newState);
-      },
-      { immediate: true, deep: true }
-    );
-  },
-};
+const Teddy = Symbol();
+const TeddyStore = Symbol();
 
-var sync = {
-  handle({ name, store }) {
-    /* istanbul ignore next */
-    if (window) {
-      window.addEventListener('storage', (e) => {
-        if (e.key === prefix(name)) {
-          store.state = { ...store.state, ...JSON.parse(e.newValue) };
-        }
-      });
-    }
+const Teddies = ref({
+  __options: { devtools: true },
+  spaces: {
+    // $: {
+    //   options: { devtools: true },
+    //   stores: {
+    //     // '@': {
+    //     //   _state: {},
+    //     //   state: {},
+    //     //   getters: {},
+    //     //   actions: {},
+    //     //   watchers: [], // { path, handler }
+    //     //   options: { devtools: true },
+    //     // },
+    //   },
+    // },
   },
-};
-
-var features = /*#__PURE__*/Object.freeze({
-  __proto__: null,
-  cache: cache,
-  history: history,
-  sync: sync
 });
 
-let Vue; // binding to Vue
+const DEFAULT_SPACE_NAME = '$';
+const DEFAULT_STORE_NAME = '@';
 
-class MissingStoreError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'MissingStoreError';
-  }
-}
+const setStore = (spaceName, storeName, store) => {
+  store = store || {};
+  const _store = getTeddyStore(spaceName, storeName);
+  setState(spaceName, storeName, store.state);
+  setGetters(spaceName, storeName, store.getters);
+  setActions(spaceName, storeName, store.actions);
+  setWatchers(spaceName, storeName, store.watchers);
+  return _store
+};
 
-class TeddyStore {
-  constructor(options) {
-    this._options = {
-      devtools: __Vue.config.devtools,
-      ...(options || {}),
-    };
-    this._vueInstance = null;
-    this._stores = {};
-    this._features = features;
+const makeState = (_, __, state) => {
+  return isRef(state) ? state : ref(state)
+};
 
-    // Add default store
-    // this.add('@', { state: {} })
-  }
-
-  add(name, store) {
-    store = store || {};
-
-    this._stores[name] = {};
-    this[name] = this._stores[name];
-
-    this.addState(name, store.state);
-    this.addGetters(name, store.getters);
-    this.addActions(name, store.actions);
-    this.addStoreProperties(name, omit(store, ['state', 'getters', 'actions', 'watcher', 'watchers', 'devtools']));
-    this.registerWatchers(name, store.watcher);
-    this.registerWatchers(name, store.watchers);
-    // if (store.devtools || this._options.devtools) {
-    //   this.registerForDevtools(name)
-    // }
-
-    return this
-  }
-
-  addStoreProperties(name, properties, options) {
-    const { allowOverriding = false, alsoAtPath = null } = options || {};
-    if (!this._stores[name]) this._stores[name] = {};
-    for (const propertyKey of Object.keys(properties || {})) {
-      if (propertyKey in this._stores[name] && !allowOverriding) {
-        console.warn(`addStoreProperties('${name}',...) - Couldn't override property ${propertyKey} on store '${name}'`);
-        continue
-      }
-      this._stores[name][propertyKey] = properties[propertyKey];
-      if (typeof alsoAtPath === 'string') {
-        if (!this._stores[name][alsoAtPath]) this._stores[name][alsoAtPath] = {};
-        this._stores[name][alsoAtPath][propertyKey] = this._stores[name][propertyKey];
-      }
-    }
-
-    return this
-  }
-
-  addState(name, state) {
-    if (!this._stores[name]) this._stores[name] = {};
-    const _state = createState(state);
-    this._stores[name]._state = _state;
-
-    Object.defineProperty(this._stores[name], 'state', {
-      get: () => _state.value,
+const applyState = (_, __, state, destination = {}) => {
+  destination._state = makeState(_, __, state);
+  if (!('state' in destination)) {
+    Object.defineProperty(destination, 'state', {
+      get: () => destination._state.value,
       set: (newState) => {
-        _state.value = newState;
+        destination._state.value = newState;
       },
       enumerable: true,
     });
-
-    return this
   }
-
-  addGetters(name, getters) {
-    this.addStoreProperties(name, createGetters(this._stores[name], getters), { alsoAtPath: '_getters' });
-    return this
-  }
-
-  addActions(name, actions) {
-    this.addStoreProperties(name, createActions(this._stores[name], actions), { alsoAtPath: '_actions' });
-    return this
-  }
-
-  registerWatchers(name, watchers) {
-    const _watchers = [];
-    if (Array.isArray(watchers)) {
-      _watchers.push(...watchers);
-    } else if (watchers) {
-      _watchers.push(watchers);
-    }
-
-    // If no store is registered at this name yet
-    if (!this.exists(name)) return
-    // If no watchers
-    if (_watchers.length === 0) return
-
-    for (let watcher of _watchers) {
-      // Watcher is a function
-      if (typeof watcher === 'function') {
-        watch(() => this._stores[name].state, watcher, { deep: true });
-      }
-      // Watcher is an object definition with a .handler()
-      else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
-        const { handler, path, paths = [], ...options } = watcher;
-        // Contains a path
-        if (typeof path === 'string') {
-          watch(() => makeTeddyGet()(this, resolvePath([name, path])), handler, { deep: true, ...options });
-        }
-        // Contains paths
-        else if (paths.length > 0) {
-          watch(
-            paths.map((p) => () => makeTeddyGet()(this, resolvePath([name, p]))),
-            handler,
-            { deep: true, ...options }
-          );
-        }
-        // Global watcher
-        else {
-          watch(() => this._stores[name].state, handler, { deep: true, ...options });
-        }
-      }
-    }
-
-    return this
-  }
-
-  // registerForDevtools(name) {
-  //   const { watchers } = registerForDevtools(this._stores[name])
-  //   this.registerWatchers(name, watchers)
-  // }
-
-  exists(name) {
-    return name in this._stores
-  }
-
-  remove(name) {
-    if (name in this) delete this[name];
-    if (name in this._stores) delete this._stores[name];
-  }
-
-  reset() {
-    for (let store in this._stores) {
-      this.remove(store);
-    }
-  }
-
-  use(feature = {}) {
-    if (typeof feature.install === 'function') {
-      feature.install(this);
-    }
-    if (typeof feature.handle === 'function') {
-      Object.keys(this._stores).map((name) => feature.handle.call(this, { name, store: this._stores[name] }));
-    }
-    return this
-  }
-
-  activate(featureNames = []) {
-    if (!Array.isArray(featureNames)) featureNames = [featureNames];
-    for (let featureName of featureNames) {
-      if (featureName in this._features) {
-        this.use(this._features[featureName]);
-      }
-    }
-    return this
-  }
-
-  attachTo(VueInstance) {
-    this._vueInstance = VueInstance;
-    return this
-  }
-
-  install(...args) {
-    const TeddyInstance = this;
-    const [VueInstance] = args;
-
-    // Vue 2
-    if (VueInstance.version.startsWith('2')) {
-      /* istanbul ignore next */
-      if (Vue && VueInstance === Vue) {
-        return
-      }
-
-      Vue = VueInstance;
-
-      VueInstance.prototype.$teddy = TeddyInstance;
-
-      // Doesn't bring anything more
-      // Object.defineProperty(VueInstance.prototype, '$teddy', {
-      //   get() {
-      //     return TeddyInstance.attachTo(this)
-      //   },
-      //   enumerable: true,
-      //   configurable: true,
-      // })
-    }
-    // Vue 3
-    /* istanbul ignore next */
-    else if (VueInstance.version.startsWith('3')) {
-      const [app] = args;
-
-      app.provide('$teddy');
-
-      Object.defineProperty(app.config.globalProperties, '$teddy', {
-        get() {
-          return TeddyInstance.attachTo(this)
-        },
-        configurable: true,
-      });
-    }
-  }
-
-  get stores() {
-    return this._stores
-  }
-
-  has(path, context) {
-    return has$1(path, context)
-  }
-
-  get(path, context) {
-    return get$1(path, context)
-  }
-
-  getter(path, context) {
-    return getter(path, context)
-  }
-
-  set(path, value, context) {
-    return set$1(path, value, context)
-  }
-
-  setter(path, context) {
-    return setter(path, context)
-  }
-
-  sync(path, context) {
-    return sync$1(path, context)
-  }
-
-  computed(definition) {
-    return computed(definition)
-  }
-}
-
-const createState = (state = {}) => {
-  if (isRef(state)) {
-    return state
-  } else {
-    return ref(state)
-  }
+  return destination
 };
 
-const createGetters = (store, getters) => {
+const setState = (spaceName, storeName, state) => {
+  const store = getTeddyStore(spaceName, storeName);
+  applyState(spaceName, storeName, state, store);
+};
+
+const makeGetters = (spaceName, storeName, getters) => {
+  const store = getTeddyStore(spaceName, storeName);
   getters = getters || {};
   return Object.keys(getters).reduce((acc, key) => {
     if (isComputed(getters[key])) {
       acc[key] = getters[key];
     } else if (typeof getters[key] === 'function') {
-      const context = { state: store.state, getters: store.getters };
-      acc[key] = computed(() => getters[key](context));
+      acc[key] = computed(() => getters[key](store));
     }
     return acc
   }, {})
 };
 
-const createActions = (store, actions) => {
+const setGetters = (spaceName, storeName, getters) => {
+  const store = getTeddyStore(spaceName, storeName);
+  store.getters = { ...(store.getters || {}), ...makeGetters(spaceName, storeName, getters) };
+  return store
+};
+
+const makeActions = (spaceName, storeName, actions) => {
+  const store = getTeddyStore(spaceName, storeName);
   actions = actions || {};
   return Object.keys(actions).reduce((acc, key) => {
     if (typeof actions[key] === 'function') {
-      const context = { state: store.state, getters: store.getters };
-      acc[key] = (...args) => actions[key](context, ...args);
+      acc[key] = (...args) => actions[key](store, ...args);
     }
     return acc
   }, {})
 };
 
-const has$1 = (path, context) => {
-  const teddy = Vue.prototype.$teddy;
-  const _has = makeTeddyHas((name) => {
-    if (!teddy.exists(name)) {
-      throw new MissingStoreError(`You're trying to use the method .has('${path}', context?) on a store which doesn't exists: '${name}'`)
-    }
-  });
-  return _has(teddy, path, context) //resolveContext(context, teddy))
+const setActions = (spaceName, storeName, actions) => {
+  const store = getTeddyStore(spaceName, storeName);
+  store.actions = { ...(store.actions || {}), ...makeActions(spaceName, storeName, actions) };
+  return store
 };
 
-const get$1 = (path, context) => {
-  const teddy = Vue.prototype.$teddy;
-  const _get = makeTeddyGet((name) => {
-    if (!teddy.exists(name)) {
-      throw new MissingStoreError(`You're trying to use the method .get('${path}', context?) on a store which doesn't exists: '${name}'`)
+const makeWatchers = (spaceName, storeName, watchers) => {
+  const store = getTeddyStore(spaceName, storeName);
+
+  const _watchers = [];
+  if (Array.isArray(watchers)) {
+    _watchers.push(...watchers);
+  } else if (watchers) {
+    _watchers.push(watchers);
+  }
+
+  // If no watchers
+  if (_watchers.length === 0) return []
+
+  return _watchers.reduce((list, watcher) => {
+    const register = (path, watching, handler, options) => {
+      const unwatch = watch(watching, handler, { deep: true, ...options });
+      list.push({
+        path,
+        handler,
+        options,
+        unwatch,
+      });
+    };
+
+    // Watcher is a function
+    if (typeof watcher === 'function') {
+      register(`state`, () => store.state, watcher, { deep: true });
     }
-  });
-  return _get(teddy, path, context) //resolveContext(context, teddy))
+    // Watcher is an object definition with a .handler()
+    else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
+      const { handler, path, paths = [], ...options } = watcher;
+      // Contains a path
+      if (typeof path === 'string') {
+        register(path, () => teddyGet(store, path), handler, { deep: true, ...options });
+      }
+      // Contains paths
+      else if (paths.length > 0) {
+        register(
+          paths.map((p) => resolvePath([storeName, p])),
+          paths.map((p) => () => teddyGet(store, p)),
+          handler,
+          { deep: true, ...options }
+        );
+      }
+      // Global watcher
+      else {
+        register(`state`, () => store.state, handler, { deep: true, ...options });
+      }
+    }
+    return list
+  }, [])
 };
 
-const set$1 = (path, value, context) => {
-  const teddy = Vue.prototype.$teddy;
-  const _set = makeTeddySet((name) => {
-    if (!teddy.exists(name)) {
-      throw new MissingStoreError(`You're trying to use the method .set('${path}', value, context?) on a store which doesn't exists: '${name}'`)
-    }
-  });
-  _set(teddy, path, value, context); //resolveContext(context, teddy))
+const setWatchers = (spaceName, storeName, watchers) => {
+  const store = getTeddyStore(spaceName, storeName);
+  store.watchers = [...(store.watchers || []), ...makeWatchers(spaceName, storeName, watchers)];
+  return store
 };
 
-const getter = (path, context) => {
+const exists = (spaceName, storeName) => {
+  if (storeName !== undefined) {
+    return spaceName in Teddies.value.spaces && 'stores' in Teddies.value.spaces[spaceName] && storeName in Teddies.value.spaces[spaceName].stores
+  } else {
+    return spaceName in Teddies.value.spaces
+  }
+};
+
+const remove = (spaceName, storeName) => {
+  const teddy = getTeddy(spaceName);
+  if (storeName in teddy.stores) delete teddy.stores[storeName];
+};
+
+// eslint-disable-next-line no-unused-vars
+const reset = (spaceName, __) => {
+  const teddy = getTeddy(spaceName);
+  for (const storeName in teddy.stores) {
+    remove(spaceName, storeName);
+  }
+};
+
+const has$1 = (spaceName, storeName, path, context) => {
+  const store = getTeddyStore(spaceName, storeName);
+  return teddyHas(store, path, context)
+};
+
+const get$1 = (spaceName, storeName, path, context) => {
+  const store = getTeddyStore(spaceName, storeName);
+  return teddyGet(store, path, context)
+};
+
+const getter = (spaceName, storeName, path, context) => {
   return function() {
-    return get$1(path, context || this)
+    return get$1(spaceName, storeName, path, context || this)
   }
 };
 
-const setter = (path, context) => {
+const set$1 = (spaceName, storeName, path, value, context) => {
+  const store = getTeddyStore(spaceName, storeName);
+  teddySet(store, path, value, context);
+};
+
+const setter = (spaceName, storeName, path, context) => {
   return function(value) {
-    set$1(path, value, context || this);
+    set$1(spaceName, storeName, path, value, context || this);
   }
 };
 
-const sync$1 = (path, context) => {
+const sync = (spaceName, storeName, path, context) => {
   const _sync = (path, context) => {
     return {
-      get: getter(path, context),
-      set: setter(path, context),
+      get: getter(spaceName, storeName, path, context),
+      set: setter(spaceName, storeName, path, context),
     }
   };
 
@@ -560,52 +367,136 @@ const sync$1 = (path, context) => {
   }
 };
 
+const mapMethods = (mapper = (fn) => fn) => {
+  return {
+    setStore: mapper(setStore),
+    makeState: mapper(makeState),
+    setState: mapper(setState),
+    applyState: mapper(applyState),
+    makeGetters: mapper(makeGetters),
+    setGetters: mapper(setGetters),
+    makeActions: mapper(makeActions),
+    setActions: mapper(setActions),
+    makeWatchers: mapper(makeWatchers),
+    setWatchers: mapper(setWatchers),
+    exists: mapper(exists),
+    remove: mapper(remove),
+    reset: mapper(reset),
+    has: mapper(has$1),
+    get: mapper(get$1),
+    getter: mapper(getter),
+    set: mapper(set$1),
+    setter: mapper(setter),
+    sync: mapper(sync),
+  }
+};
+
+const getTeddy = (spaceName = DEFAULT_SPACE_NAME) => {
+  if (!(spaceName in Teddies.value.spaces)) Teddies.value.spaces[spaceName] = {};
+  return Teddies.value.spaces[spaceName]
+};
+
+const getTeddyStore = (spaceName = DEFAULT_SPACE_NAME, storeName = DEFAULT_STORE_NAME) => {
+  getTeddy(spaceName);
+  if (!('stores' in Teddies.value.spaces[spaceName])) {
+    Teddies.value.spaces[spaceName].stores = {};
+  }
+  if (!(storeName in Teddies.value.spaces[spaceName].stores)) {
+    Teddies.value.spaces[spaceName].stores[storeName] = {
+      getters: {},
+      actions: {},
+      watchers: [],
+      options: {},
+    };
+    applyState(spaceName, storeName, {}, Teddies.value.spaces[spaceName].stores[storeName]);
+  }
+  return Teddies.value.spaces[spaceName].stores[storeName]
+};
+
+const useTeddy = (spaceName = DEFAULT_SPACE_NAME) => {
+  getTeddy(spaceName);
+  const proxy = (fn) => (...fnArgs) => fn(spaceName, ...fnArgs);
+  return mapMethods(proxy)
+};
+
+const useTeddyStore = (...args) => {
+  let spaceName = args[0] || DEFAULT_SPACE_NAME;
+  let storeName = args[1] || DEFAULT_STORE_NAME;
+
+  if (args.length === 1) {
+    storeName = spaceName;
+    spaceName = undefined;
+  }
+
+  const proxy = (fn) => (...fnArgs) => fn(spaceName, storeName, ...fnArgs);
+  return mapMethods(proxy)
+};
+
+const provideTeddy = (spaceName = DEFAULT_SPACE_NAME) => {
+  provide(Teddy, useTeddy(spaceName));
+};
+
+const provideTeddyStore = (...args) => {
+  provide(TeddyStore, useTeddyStore(...args));
+};
+
+const injectTeddy = () => {
+  inject(Teddy);
+};
+
+const injectTeddyStore = () => {
+  inject(TeddyStore);
+};
+
 const computed = (definition) => {
   if (isObject(definition)) {
     const hasGetter = 'get' in definition && typeof definition.get === 'function';
     const hasSetter = 'set' in definition && typeof definition.set === 'function';
     if (hasGetter || hasSetter) {
-      return computed$2(definition)
+      return computed$1(definition)
     } else {
       return Object.keys(definition).reduce((acc, key) => {
-        acc[key] = computed$2(definition[key]);
+        acc[key] = computed$1(definition[key]);
         return acc
       }, {})
     }
   } else {
-    return computed$2(definition)
+    return computed$1(definition)
   }
 };
 
-// Is too random as it doesn't keep current instance but rather last instance where $teddy
-// has been called from
-// export function resolveContext(...contexts) {
-//   for (let context of contexts.filter(Boolean)) {
-//     if (context instanceof TeddyStore && context._vueInstance) {
-//       return context._vueInstance
-//     } else if (isObject(context)) {
-//       return context
-//     }
-//   }
-// }
-
-var others = /*#__PURE__*/Object.freeze({
+var methods = /*#__PURE__*/Object.freeze({
   __proto__: null,
-  MissingStoreError: MissingStoreError,
-  'default': TeddyStore,
-  createState: createState,
-  createGetters: createGetters,
-  createActions: createActions,
+  setStore: setStore,
+  makeState: makeState,
+  applyState: applyState,
+  setState: setState,
+  makeGetters: makeGetters,
+  setGetters: setGetters,
+  makeActions: makeActions,
+  setActions: setActions,
+  makeWatchers: makeWatchers,
+  setWatchers: setWatchers,
+  exists: exists,
+  remove: remove,
+  reset: reset,
   has: has$1,
   get: get$1,
-  set: set$1,
   getter: getter,
+  set: set$1,
   setter: setter,
-  sync: sync$1,
+  sync: sync,
+  mapMethods: mapMethods,
+  getTeddy: getTeddy,
+  getTeddyStore: getTeddyStore,
+  useTeddy: useTeddy,
+  useTeddyStore: useTeddyStore,
+  provideTeddy: provideTeddy,
+  provideTeddyStore: provideTeddyStore,
+  injectTeddy: injectTeddy,
+  injectTeddyStore: injectTeddyStore,
   computed: computed
 });
 
-const { has: has$2, get: get$2, set: set$2, sync: sync$2, computed: computed$1, setter: setter$1, getter: getter$1, createGetters: createGetters$1, createState: createState$1, MissingStoreError: MissingStoreError$1 } = others;
-
-export default TeddyStore;
-export { MissingStoreError$1 as MissingStoreError, accessors, computed$1 as computed, createGetters$1 as createGetters, createState$1 as createState, get$2 as get, getter$1 as getter, has$2 as has, set$2 as set, setter$1 as setter, sync$2 as sync };
+export default methods;
+export { Teddies, accessors, computed, exists, get$1 as get, getTeddy, getTeddyStore, getter, has$1 as has, injectTeddy, injectTeddyStore, makeActions, makeGetters, makeState, makeWatchers, provideTeddy, provideTeddyStore, remove, reset, set$1 as set, setActions, setGetters, setState, setStore, setWatchers, setter, sync, useTeddy, useTeddyStore };

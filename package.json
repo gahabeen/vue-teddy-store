@@ -19,7 +19,7 @@
   "unpkg": "dist/vue-teddy-store.js",
   "dependencies": {
     "@vue/composition-api": "^1.0.0-beta.6",
-    "object-string-path": "^0.1.23",
+    "object-string-path": "^0.1.24",
     "vue": "^2.6.11"
   },
   "devDependencies": {
