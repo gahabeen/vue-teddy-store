@@ -163,22 +163,32 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
   const DEFAULT_SPACE_NAME = '$';
   const DEFAULT_STORE_NAME = '@';
 
-  const setStore = (spaceName, storeName, store) => {
+  const parseDefinition = (spaceOrDefinition = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {
+    let _space = spaceOrDefinition;
+    let _name = name;
+    if (objectStringPath.isObject(spaceOrDefinition)) {
+      _space = spaceOrDefinition.space || _space;
+      _name = spaceOrDefinition.name || _name;
+    }
+    return { space: _space, name: _name }
+  };
+
+  const setStore = (definition, store) => {
     store = store || {};
-    const _store = getTeddyStore(spaceName, storeName);
-    setState(spaceName, storeName, store.state);
-    setGetters(spaceName, storeName, store.getters);
-    setActions(spaceName, storeName, store.actions);
-    setWatchers(spaceName, storeName, store.watchers);
+    const _store = getTeddyStore(definition);
+    setState(definition, store.state);
+    setGetters(definition, store.getters);
+    setActions(definition, store.actions);
+    setWatchers(definition, store.watchers);
     return _store
   };
 
-  const makeState = (_, __, state) => {
+  const makeState = (_, state) => {
     return VueCompositionMethods.isRef(state) ? state : VueCompositionMethods.ref(state)
   };
 
-  const applyState = (_, __, state, destination = {}) => {
-    destination._state = makeState(_, __, state);
+  const applyState = (definition, state, destination = {}) => {
+    destination._state = makeState(definition, state);
     if (!('state' in destination)) {
       Object.defineProperty(destination, 'state', {
         get: () => destination._state.value,
@@ -191,13 +201,13 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     return destination
   };
 
-  const setState = (spaceName, storeName, state) => {
-    const store = getTeddyStore(spaceName, storeName);
-    applyState(spaceName, storeName, state, store);
+  const setState = (definition, state) => {
+    const store = getTeddyStore(definition);
+    applyState(definition, state, store);
   };
 
-  const makeGetters = (spaceName, storeName, getters) => {
-    const store = getTeddyStore(spaceName, storeName);
+  const makeGetters = (definition, getters) => {
+    const store = getTeddyStore(definition);
     getters = getters || {};
     return Object.keys(getters).reduce((acc, key) => {
       if (isComputed(getters[key])) {
@@ -209,14 +219,14 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     }, {})
   };
 
-  const setGetters = (spaceName, storeName, getters) => {
-    const store = getTeddyStore(spaceName, storeName);
-    store.getters = { ...(store.getters || {}), ...makeGetters(spaceName, storeName, getters) };
+  const setGetters = (definition, getters) => {
+    const store = getTeddyStore(definition);
+    store.getters = { ...(store.getters || {}), ...makeGetters(definition, getters) };
     return store
   };
 
-  const makeActions = (spaceName, storeName, actions) => {
-    const store = getTeddyStore(spaceName, storeName);
+  const makeActions = (definition, actions) => {
+    const store = getTeddyStore(definition);
     actions = actions || {};
     return Object.keys(actions).reduce((acc, key) => {
       if (typeof actions[key] === 'function') {
@@ -226,14 +236,15 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     }, {})
   };
 
-  const setActions = (spaceName, storeName, actions) => {
-    const store = getTeddyStore(spaceName, storeName);
-    store.actions = { ...(store.actions || {}), ...makeActions(spaceName, storeName, actions) };
+  const setActions = (definition, actions) => {
+    const store = getTeddyStore(definition);
+    store.actions = { ...(store.actions || {}), ...makeActions(definition, actions) };
     return store
   };
 
-  const makeWatchers = (spaceName, storeName, watchers) => {
-    const store = getTeddyStore(spaceName, storeName);
+  const makeWatchers = (definition, watchers) => {
+    const { name } = parseDefinition(definition);
+    const store = getTeddyStore(definition);
 
     const _watchers = [];
     if (Array.isArray(watchers)) {
@@ -270,7 +281,7 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
         // Contains paths
         else if (paths.length > 0) {
           register(
-            paths.map((p) => resolvePath([storeName, p])),
+            paths.map((p) => resolvePath([name, p])),
             paths.map((p) => () => teddyGet(store, p)),
             handler,
             { deep: true, ...options }
@@ -285,65 +296,68 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     }, [])
   };
 
-  const setWatchers = (spaceName, storeName, watchers) => {
-    const store = getTeddyStore(spaceName, storeName);
-    store.watchers = [...(store.watchers || []), ...makeWatchers(spaceName, storeName, watchers)];
+  const setWatchers = (definition, watchers) => {
+    const store = getTeddyStore(definition);
+    store.watchers = [...(store.watchers || []), ...makeWatchers(definition, watchers)];
     return store
   };
 
-  const exists = (spaceName, storeName) => {
-    if (storeName !== undefined) {
-      return spaceName in Teddies.value.spaces && 'stores' in Teddies.value.spaces[spaceName] && storeName in Teddies.value.spaces[spaceName].stores
+  const exists = (definition) => {
+    const { space, name } = parseDefinition(definition);
+    if (name !== undefined) {
+      return space in Teddies.value.spaces && 'stores' in Teddies.value.spaces[space] && name in Teddies.value.spaces[space].stores
     } else {
-      return spaceName in Teddies.value.spaces
+      return space in Teddies.value.spaces
     }
   };
 
-  const remove = (spaceName, storeName) => {
-    const teddy = getTeddy(spaceName);
-    if (storeName in teddy.stores) delete teddy.stores[storeName];
+  const remove = (definition) => {
+    const { space, name } = parseDefinition(definition);
+    const teddy = getTeddy(space);
+    if (name in teddy.stores) delete teddy.stores[name];
   };
 
   // eslint-disable-next-line no-unused-vars
-  const reset = (spaceName, __) => {
-    const teddy = getTeddy(spaceName);
-    for (const storeName in teddy.stores) {
-      remove(spaceName, storeName);
-    }
+  const reset = (definition) => {
+    // const { space, name } = parseDefinition(definition)
+    // const teddy = getTeddy(space)
+    // for (const _name in teddy.stores) {
+    //   remove(definition)
+    // }
   };
 
-  const has$1 = (spaceName, storeName, path, context) => {
-    const store = getTeddyStore(spaceName, storeName);
+  const has$1 = (definition, path, context) => {
+    const store = getTeddyStore(definition);
     return teddyHas(store, path, context)
   };
 
-  const get$1 = (spaceName, storeName, path, context) => {
-    const store = getTeddyStore(spaceName, storeName);
+  const get$1 = (definition, path, context) => {
+    const store = getTeddyStore(definition);
     return teddyGet(store, path, context)
   };
 
-  const getter = (spaceName, storeName, path, context) => {
+  const getter = (definition, path, context) => {
     return function() {
-      return get$1(spaceName, storeName, path, context || this)
+      return get$1(definition, path, context || this)
     }
   };
 
-  const set$1 = (spaceName, storeName, path, value, context) => {
-    const store = getTeddyStore(spaceName, storeName);
+  const set$1 = (definition, path, value, context) => {
+    const store = getTeddyStore(definition);
     teddySet(store, path, value, context);
   };
 
-  const setter = (spaceName, storeName, path, context) => {
+  const setter = (definition, path, context) => {
     return function(value) {
-      set$1(spaceName, storeName, path, value, context || this);
+      set$1(definition, path, value, context || this);
     }
   };
 
-  const sync = (spaceName, storeName, path, context) => {
+  const sync = (definition, path, context) => {
     const _sync = (path, context) => {
       return {
-        get: getter(spaceName, storeName, path, context),
-        set: setter(spaceName, storeName, path, context),
+        get: getter(definition, path, context),
+        set: setter(definition, path, context),
       }
     };
 
@@ -393,49 +407,53 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     }
   };
 
-  const getTeddy = (spaceName = DEFAULT_SPACE_NAME) => {
-    if (!(spaceName in Teddies.value.spaces)) Teddies.value.spaces[spaceName] = {};
-    return Teddies.value.spaces[spaceName]
+  const getTeddy = (space = DEFAULT_SPACE_NAME) => {
+    if (!(space in Teddies.value.spaces)) Teddies.value.spaces[space] = {};
+    return Teddies.value.spaces[space]
   };
 
-  const getTeddyStore = (spaceName = DEFAULT_SPACE_NAME, storeName = DEFAULT_STORE_NAME) => {
-    getTeddy(spaceName);
-    if (!('stores' in Teddies.value.spaces[spaceName])) {
-      Teddies.value.spaces[spaceName].stores = {};
+  const useTeddy = (space = DEFAULT_SPACE_NAME) => {
+    const store = getTeddy(space);
+    const proxy = (fn) => (...fnArgs) => fn({ space, name: DEFAULT_STORE_NAME }, ...fnArgs);
+    return { store, ...mapMethods(proxy) }
+  };
+
+  const getStore = (name = DEFAULT_STORE_NAME) => {
+    return getTeddyStore(DEFAULT_SPACE_NAME, name)
+  };
+
+  const useStore = (name = DEFAULT_STORE_NAME) => {
+    const store = getStore(name);
+    const proxy = (fn) => (...fnArgs) => fn({ name, space: DEFAULT_SPACE_NAME }, ...fnArgs);
+    return { store, ...mapMethods(proxy) }
+  };
+
+  const getTeddyStore = (spaceOrDefinition, maybeName) => {
+    const { space, name } = parseDefinition(spaceOrDefinition, maybeName);
+    getTeddy(space);
+    if (!('stores' in Teddies.value.spaces[space])) {
+      Teddies.value.spaces[space].stores = {};
     }
-    if (!(storeName in Teddies.value.spaces[spaceName].stores)) {
-      Teddies.value.spaces[spaceName].stores[storeName] = {
+    if (!(name in Teddies.value.spaces[space].stores)) {
+      Teddies.value.spaces[space].stores[name] = {
         getters: {},
         actions: {},
         watchers: [],
         options: {},
       };
-      applyState(spaceName, storeName, {}, Teddies.value.spaces[spaceName].stores[storeName]);
+      applyState({ space, name }, {}, Teddies.value.spaces[space].stores[name]);
     }
-    return Teddies.value.spaces[spaceName].stores[storeName]
+    return Teddies.value.spaces[space].stores[name]
   };
 
-  const useTeddy = (spaceName = DEFAULT_SPACE_NAME) => {
-    getTeddy(spaceName);
-    const proxy = (fn) => (...fnArgs) => fn(spaceName, ...fnArgs);
-    return mapMethods(proxy)
+  const useTeddyStore = (space = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {
+    const store = getTeddyStore(space, name);
+    const proxy = (fn) => (...fnArgs) => fn({ space, name }, ...fnArgs);
+    return { store, ...mapMethods(proxy) }
   };
 
-  const useTeddyStore = (...args) => {
-    let spaceName = args[0] || DEFAULT_SPACE_NAME;
-    let storeName = args[1] || DEFAULT_STORE_NAME;
-
-    if (args.length === 1) {
-      storeName = spaceName;
-      spaceName = undefined;
-    }
-
-    const proxy = (fn) => (...fnArgs) => fn(spaceName, storeName, ...fnArgs);
-    return mapMethods(proxy)
-  };
-
-  const provideTeddy = (spaceName = DEFAULT_SPACE_NAME) => {
-    VueCompositionMethods.provide(Teddy, useTeddy(spaceName));
+  const provideTeddy = (space = DEFAULT_SPACE_NAME) => {
+    VueCompositionMethods.provide(Teddy, useTeddy(space));
   };
 
   const provideTeddyStore = (...args) => {
@@ -467,8 +485,13 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     }
   };
 
-  var methods = /*#__PURE__*/Object.freeze({
+  var output = /*#__PURE__*/Object.freeze({
     __proto__: null,
+    accessors: accessors,
+    Teddy: Teddy,
+    TeddyStore: TeddyStore,
+    Teddies: Teddies,
+    parseDefinition: parseDefinition,
     setStore: setStore,
     makeState: makeState,
     applyState: applyState,
@@ -490,8 +513,10 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     sync: sync,
     mapMethods: mapMethods,
     getTeddy: getTeddy,
-    getTeddyStore: getTeddyStore,
     useTeddy: useTeddy,
+    getStore: getStore,
+    useStore: useStore,
+    getTeddyStore: getTeddyStore,
     useTeddyStore: useTeddyStore,
     provideTeddy: provideTeddy,
     provideTeddyStore: provideTeddyStore,
@@ -500,22 +525,32 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     computed: computed
   });
 
+  const install = (VueInstance) => {
+    VueInstance.prototype.$teddy = output;
+  };
+
   exports.Teddies = Teddies;
+  exports.Teddy = Teddy;
+  exports.TeddyStore = TeddyStore;
   exports.accessors = accessors;
+  exports.applyState = applyState;
   exports.computed = computed;
-  exports.default = methods;
   exports.exists = exists;
   exports.get = get$1;
+  exports.getStore = getStore;
   exports.getTeddy = getTeddy;
   exports.getTeddyStore = getTeddyStore;
   exports.getter = getter;
   exports.has = has$1;
   exports.injectTeddy = injectTeddy;
   exports.injectTeddyStore = injectTeddyStore;
+  exports.install = install;
   exports.makeActions = makeActions;
   exports.makeGetters = makeGetters;
   exports.makeState = makeState;
   exports.makeWatchers = makeWatchers;
+  exports.mapMethods = mapMethods;
+  exports.parseDefinition = parseDefinition;
   exports.provideTeddy = provideTeddy;
   exports.provideTeddyStore = provideTeddyStore;
   exports.remove = remove;
@@ -528,6 +563,7 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
   exports.setWatchers = setWatchers;
   exports.setter = setter;
   exports.sync = sync;
+  exports.useStore = useStore;
   exports.useTeddy = useTeddy;
   exports.useTeddyStore = useTeddyStore;
 
