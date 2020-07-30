@@ -81,4 +81,40 @@ describe('use cases - ', () => {
     await flushPromises()
     expect(wrapper.text()).toBe('true')
   })
+
+  // it(`should be able to use $route params in template`, async () => {
+  //   const localVue = createLocalVue()
+  //   localVue.use(install)
+
+  //   const space = nanoid()
+  //   const name = nanoid()
+
+  //   setStore(
+  //     { space, name },
+  //     {
+  //       state: {
+  //         products: [{ name: 'berries' }],
+  //       },
+  //     }
+  //   )
+
+  //   const wrapper = mount(
+  //     {
+  //       template: `<div>{{"" + $teddy.has('${space}.${name}', 'products.{$route.params.index}.name', this)}}</div>`,
+  //       // template: `<div>{{"" + $teddy.has({space:'${space}', name:'${name}'}, 'products.{$route.params.index}.name', this)}}</div>`,
+  //     },
+  //     {
+  //       localVue,
+  //       mocks: {
+  //         $route: {
+  //           params: {
+  //             index: 0,
+  //           },
+  //         },
+  //       },
+  //     }
+  //   )
+  //   await flushPromises()
+  //   expect(wrapper.text()).toBe('true')
+  // })
 })

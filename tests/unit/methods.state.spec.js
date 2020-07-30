@@ -32,7 +32,7 @@ describe('methods - state', () => {
         firstName: 'Teddy',
       }
     )
-    expect(Teddies.value.spaces[space].stores[name].state.firstName).toBe('Teddy')
+    expect(Teddies.spaces[space].stores[name].state.firstName).toBe('Teddy')
   })
 
   it('setState() should pass on a reactive state for space/store', async () => {
@@ -44,6 +44,6 @@ describe('methods - state', () => {
         firstName: 'Teddy',
       })
     )
-    expect(Teddies.value.spaces[space].stores[name].state.firstName).toBe('Teddy')
+    expect(Teddies.spaces[space].stores[name].state.firstName).toBe('Teddy')
   })
 })

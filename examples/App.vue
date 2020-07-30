@@ -28,8 +28,8 @@ export default {
   computed: {
     stores(){
       const self = this
-      return Object.keys(self.$teddy.stores).reduce((acc, key) => {
-        acc[key] = self.$teddy.stores[key].state
+      return Object.keys(self.$teddy.Teddies.value.spaces).reduce((acc, key) => {
+        acc[key] = JSON.parse(JSON.stringify(self.$teddy.Teddies.value.spaces[key]))
         return acc
       }, {})
     }

@@ -2,23 +2,28 @@ import Vue from 'vue'
 import VueCompositionApi from '@vue/composition-api'
 Vue.use(VueCompositionApi)
 
-import VueTeddyStore from '../../../src/index'
-const store = new VueTeddyStore({})
+import { setStore, install } from '../../../src/index'
 
-store.add('user', {
+setStore('user', {
   state: {
-    firstName: 'Teddy',
-    lastName: '',
+    profile: {
+      firstName: 'Teddy',
+      lastName: 'Bear',
+      documents: [{
+        id: 1,
+        name: "passport"
+      }]
+    }
   },
   getters: {
-    fullName: ({ state }) => state.firstName + ' ' + state.lastName,
+    fullName: ({ state }) => state.profile.firstName + ' ' + state.profile.lastName,
   },
   actions: {
     refresh({ state }) {
-      state.firstName = 'Teddy'
-      state.firstName = 'Bear'
+      state.profile.firstName = 'Teddy'
+      state.profile.firstName = 'Bear'
     },
   },
 })
 
-export default store
+export default install

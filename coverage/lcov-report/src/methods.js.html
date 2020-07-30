@@ -940,9 +940,9 @@ export const setWatchers = (definition, watchers) =&gt; {
 export const exists = (definition) =&gt; {
   const { space, name } = parseDefinition(definition)
   <span class="missing-if-branch" title="else path not taken" >E</span>if (name !== undefined) {
-    return space in Teddies.value.spaces &amp;&amp; 'stores' in Teddies.value.spaces[space] &amp;&amp; name in Teddies.value.spaces[space].stores
+    return space in Teddies.spaces &amp;&amp; 'stores' in Teddies.spaces[space] &amp;&amp; name in Teddies.spaces[space].stores
   } else {
-<span class="cstat-no" title="statement not covered" >    return space in Teddies.value.spaces</span>
+<span class="cstat-no" title="statement not covered" >    return space in Teddies.spaces</span>
   }
 }
 &nbsp;
@@ -1020,13 +1020,13 @@ export const sync = (definition, path, context) =&gt; {
 &nbsp;
 export const setFeature = (feature = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span> =&gt; {
   <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof feature.teddy === 'function') {
-<span class="cstat-no" title="statement not covered" >    feature.teddy(Teddies.value)</span>
+<span class="cstat-no" title="statement not covered" >    feature.teddy(Teddies)</span>
   }
-  for (const space of Object.keys(Teddies.value.spaces || <span class="branch-1 cbranch-no" title="branch not covered" >{})</span>) {
+  for (const space of Object.keys(Teddies.spaces || <span class="branch-1 cbranch-no" title="branch not covered" >{})</span>) {
     <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof feature.space === 'function') {
 <span class="cstat-no" title="statement not covered" >      feature.space(space)</span>
     }
-    for (const name of Object.keys(Teddies.value.spaces[space].stores || <span class="branch-1 cbranch-no" title="branch not covered" >{})</span>) {
+    for (const name of Object.keys(Teddies.spaces[space].stores || <span class="branch-1 cbranch-no" title="branch not covered" >{})</span>) {
       <span class="missing-if-branch" title="else path not taken" >E</span>if (typeof feature.store === 'function') {
         feature.store(space, name)
       }
@@ -1059,8 +1059,8 @@ export const mapMethods = (mapper = <span class="fstat-no" title="function not c
 }
 &nbsp;
 export const getTeddy = (space = <span class="branch-0 cbranch-no" title="branch not covered" >DEFAULT_SPACE_NAME)</span> =&gt; {
-  if (!(space in Teddies.value.spaces)) Teddies.value.spaces[space] = {}
-  return Teddies.value.spaces[space]
+  if (!(space in Teddies.spaces)) Teddies.spaces[space] = {}
+  return Teddies.spaces[space]
 }
 &nbsp;
 export const useTeddy = (space = DEFAULT_SPACE_NAME) =&gt; {
@@ -1082,20 +1082,20 @@ export const useStore = <span class="fstat-no" title="function not covered" >(n<
 export const getTeddyStore = (spaceOrDefinition, maybeName) =&gt; {
   const { space, name } = parseDefinition(spaceOrDefinition, maybeName)
   getTeddy(space)
-  if (!('stores' in Teddies.value.spaces[space])) {
-    Teddies.value.spaces[space].stores = {}
+  if (!('stores' in Teddies.spaces[space])) {
+    Teddies.spaces[space].stores = {}
   }
-  if (!(name in Teddies.value.spaces[space].stores)) {
-    Teddies.value.spaces[space].stores[name] = {
+  if (!(name in Teddies.spaces[space].stores)) {
+    Teddies.spaces[space].stores[name] = {
       getters: {},
       actions: {},
       watchers: [],
       options: {},
       features: {},
     }
-    applyState({ space, name }, {}, Teddies.value.spaces[space].stores[name])
+    applyState({ space, name }, {}, Teddies.spaces[space].stores[name])
   }
-  return Teddies.value.spaces[space].stores[name]
+  return Teddies.spaces[space].stores[name]
 }
 &nbsp;
 export const useTeddyStore = (space = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) =&gt; {

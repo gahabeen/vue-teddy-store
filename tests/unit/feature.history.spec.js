@@ -35,7 +35,7 @@ describe('feature, history', () => {
     await flushPromises()
     store.state.products[0].name = 'BERRIES'
     await flushPromises()
-    expect(Teddies.value.spaces[space].stores[name].features.history.stack.length).toEqual(2)
+    expect(Teddies.spaces[space].stores[name].features.history.stack.length).toEqual(2)
   })
 
   it(`shouldnd't reinstall`, async () => {
@@ -68,6 +68,6 @@ describe('feature, history', () => {
     await flushPromises()
     store.state.products[0].name = 'BERRIES'
     await flushPromises()
-    expect(Teddies.value.spaces[space].stores[name].features.history.stack.length).toEqual(2)
+    expect(Teddies.spaces[space].stores[name].features.history.stack.length).toEqual(2)
   })
 })

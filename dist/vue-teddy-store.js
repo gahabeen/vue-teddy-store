@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.0
+  * vue-teddy-store v0.2.1
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */

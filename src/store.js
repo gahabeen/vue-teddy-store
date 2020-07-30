@@ -5,7 +5,7 @@ Vue.use(VueCompositionApi)
 export const Teddy = Symbol()
 export const TeddyStore = Symbol()
 
-export const Teddies = ref({
+export const Teddies = {
   __options: { devtools: true },
   spaces: {
     // $: {
@@ -22,4 +22,4 @@ export const Teddies = ref({
     //   },
     // },
   },
-})
+}

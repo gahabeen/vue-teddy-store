@@ -8,26 +8,26 @@ import * as utils from './utils'
 const DEFAULT_SPACE_NAME = '$'
 const DEFAULT_STORE_NAME = '@'
 
-export const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, nameOrDefinition = DEFAULT_STORE_NAME) => {
-  let _space = spaceOrDefinitionOrStringified
-  let _name = nameOrDefinition
+const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, nameOrDefinition = DEFAULT_STORE_NAME) => {
+  let _space = spaceOrDefinitionOrStringified;
+  let _name = nameOrDefinition;
   if (typeof spaceOrDefinitionOrStringified === 'string' && spaceOrDefinitionOrStringified.includes('.')) {
-    const fragments = spaceOrDefinitionOrStringified.split('.')
-    _space = fragments[0] || _space
-    _name = fragments[1] || _name
+    const fragments = spaceOrDefinitionOrStringified.split('.');
+    _space = fragments[0] || _space;
+    _name = fragments[1] || _name;
   } else if (spaceOrDefinitionOrStringified && isObject(spaceOrDefinitionOrStringified)) {
-    _space = spaceOrDefinitionOrStringified.space || _space
-    _name = spaceOrDefinitionOrStringified.name || _name
+    _space = spaceOrDefinitionOrStringified.space || DEFAULT_SPACE_NAME;
+    _name = spaceOrDefinitionOrStringified.name || _name;
   } else if (nameOrDefinition && isObject(nameOrDefinition)) {
-    _space = nameOrDefinition.space || _space
-    _name = nameOrDefinition.name || _name
+    _space = nameOrDefinition.space || _space;
+    _name = nameOrDefinition.name || DEFAULT_STORE_NAME;
   }
   
-  if (typeof _space === 'string') _space = _space.trim()
-  if (typeof _name === 'string') _name = _name.trim()
+  if (typeof _space === 'string') _space = _space.trim();
+  if (typeof _name === 'string') _name = _name.trim();
 
   return { space: _space, name: _name }
-}
+};
 
 export const setStore = (nameOrDefinition, store) => {
   const _definition = parseDefinition(isObject(nameOrDefinition) ? nameOrDefinition : { name: nameOrDefinition })
@@ -162,9 +162,9 @@ export const setWatchers = (definition, watchers) => {
 export const exists = (definition) => {
   const { space, name } = parseDefinition(definition)
   if (name !== undefined) {
-    return space in Teddies.value.spaces && 'stores' in Teddies.value.spaces[space] && name in Teddies.value.spaces[space].stores
+    return space in Teddies.spaces && 'stores' in Teddies.spaces[space] && name in Teddies.spaces[space].stores
   } else {
-    return space in Teddies.value.spaces
+    return space in Teddies.spaces
   }
 }
 
@@ -242,13 +242,13 @@ export const sync = (definition, path, context) => {
 
 export const setFeature = (feature = {}) => {
   if (typeof feature.teddy === 'function') {
-    feature.teddy(Teddies.value)
+    feature.teddy(Teddies)
   }
-  for (const space of Object.keys(Teddies.value.spaces || {})) {
+  for (const space of Object.keys(Teddies.spaces || {})) {
     if (typeof feature.space === 'function') {
       feature.space(space)
     }
-    for (const name of Object.keys(Teddies.value.spaces[space].stores || {})) {
+    for (const name of Object.keys(Teddies.spaces[space].stores || {})) {
       if (typeof feature.store === 'function') {
         feature.store(space, name)
       }
@@ -281,8 +281,8 @@ export const mapMethods = (mapper = (fn) => fn) => {
 }
 
 export const getTeddy = (space = DEFAULT_SPACE_NAME) => {
-  if (!(space in Teddies.value.spaces)) Teddies.value.spaces[space] = {}
-  return Teddies.value.spaces[space]
+  if (!(space in Teddies.spaces)) Teddies.spaces[space] = {}
+  return Teddies.spaces[space]
 }
 
 export const useTeddy = (space = DEFAULT_SPACE_NAME) => {
@@ -304,20 +304,20 @@ export const useStore = (name = DEFAULT_STORE_NAME) => {
 export const getTeddyStore = (spaceOrDefinition, maybeName) => {
   const { space, name } = parseDefinition(spaceOrDefinition, maybeName)
   getTeddy(space)
-  if (!('stores' in Teddies.value.spaces[space])) {
-    Teddies.value.spaces[space].stores = {}
+  if (!('stores' in Teddies.spaces[space])) {
+    Teddies.spaces[space].stores = {}
   }
-  if (!(name in Teddies.value.spaces[space].stores)) {
-    Teddies.value.spaces[space].stores[name] = {
+  if (!(name in Teddies.spaces[space].stores)) {
+    Teddies.spaces[space].stores[name] = {
       getters: {},
       actions: {},
       watchers: [],
       options: {},
       features: {},
     }
-    applyState({ space, name }, {}, Teddies.value.spaces[space].stores[name])
+    applyState({ space, name }, {}, Teddies.spaces[space].stores[name])
   }
-  return Teddies.value.spaces[space].stores[name]
+  return Teddies.spaces[space].stores[name]
 }
 
 export const useTeddyStore = (space = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {

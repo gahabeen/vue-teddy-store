@@ -31,7 +31,7 @@ describe('methods - installation [vue 2]', () => {
       {
         template: '<div></div>',
         mounted() {
-          expect(this.$teddy.Teddies.value).toHaveProperty('spaces')
+          expect(this.$teddy.Teddies).toHaveProperty('spaces')
         },
       },
       {

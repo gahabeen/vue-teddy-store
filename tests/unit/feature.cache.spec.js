@@ -35,7 +35,7 @@ describe('feature, cache', () => {
     )
 
     await flushPromises()
-    expect(JSON.parse(window.localStorage.getItem(prefix(space, name)))).toEqual(Teddies.value.spaces[space].stores[name].state)
+    expect(JSON.parse(window.localStorage.getItem(prefix(space, name)))).toEqual(Teddies.spaces[space].stores[name].state)
   })
 
   it(`shouldnd't reinstall`, async () => {
@@ -66,6 +66,6 @@ describe('feature, cache', () => {
     )
 
     await flushPromises()
-    expect(JSON.parse(window.localStorage.getItem(prefix(space, name)))).toEqual(Teddies.value.spaces[space].stores[name].state)
+    expect(JSON.parse(window.localStorage.getItem(prefix(space, name)))).toEqual(Teddies.spaces[space].stores[name].state)
   })
 })
