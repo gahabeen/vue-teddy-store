@@ -1,7 +1,15 @@
+import { getTeddyStore } from '@/index'
 import { prefix } from './cache'
 
 export default {
-  handle({ name, store }) {
+  store(space, name) {
+    const store = getTeddyStore(space, name)
+    if (store.features.sync) {
+      return
+    } else {
+      store.features.sync = {}
+    }
+
     /* istanbul ignore next */
     if (window) {
       window.addEventListener('storage', (e) => {
@@ -10,5 +18,7 @@ export default {
         }
       })
     }
+
+    store.features.sync.installed = true
   },
 }

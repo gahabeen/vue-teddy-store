@@ -1,34 +1,35 @@
 import { getTeddyStore, setWatchers } from '@/index'
 
-export const prefix = (spaceName, storeName) => `teddy:${spaceName}:${storeName}`
+export const prefix = (space, name) => `teddy:${space}:${name}`
 export default {
-  teddy: {
-    extend() {},
-  },
-  space: {
-    extend() {},
-  },
-  store: {
-    extend(spaceName, storeName) {
-      const store = getTeddyStore(spaceName, storeName)
-      /* istanbul ignore next */
-      const localStorage = window.localStorage || global.localStorage || {}
-      /* istanbul ignore next */
-      if (localStorage) {
-        // Fetched saved state when exists
-        const cached = localStorage.getItem(prefix(spaceName, storeName))
-        if (cached) store.state = { ...store.state, ...JSON.parse(cached) }
-        // Watch for mutations, save them
-        setWatchers(spaceName, storeName, {
+  store(space, name) {
+    const store = getTeddyStore(space, name)
+    if (store.features.cache) {
+      return
+    }
+
+    /* istanbul ignore next */
+    const localStorage = window.localStorage || global.localStorage || {}
+    /* istanbul ignore next */
+    if (localStorage) {
+      // Fetched saved state when exists
+      const cached = localStorage.getItem(prefix(space, name))
+      if (cached) store.state = { ...store.state, ...JSON.parse(cached) }
+      // Watch for mutations, save them
+      setWatchers(
+        { space, name },
+        {
           handler(newState, oldState) {
             if (newState !== oldState) {
-              localStorage.setItem(prefix(spaceName, storeName), JSON.stringify(newState))
+              localStorage.setItem(prefix(space, name), JSON.stringify(newState))
             }
           },
           immediate: true,
           deep: true,
-        })
-      }
-    },
+        }
+      )
+
+      store.features.cache = true
+    }
   },
 }

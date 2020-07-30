@@ -8,23 +8,35 @@ import * as utils from './utils'
 const DEFAULT_SPACE_NAME = '$'
 const DEFAULT_STORE_NAME = '@'
 
-export const parseDefinition = (spaceOrDefinition = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {
-  let _space = spaceOrDefinition
-  let _name = name
-  if (isObject(spaceOrDefinition)) {
-    _space = spaceOrDefinition.space || _space
-    _name = spaceOrDefinition.name || _name
+export const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, nameOrDefinition = DEFAULT_STORE_NAME) => {
+  let _space = spaceOrDefinitionOrStringified
+  let _name = nameOrDefinition
+  if (typeof spaceOrDefinitionOrStringified === 'string' && spaceOrDefinitionOrStringified.includes('.')) {
+    const fragments = spaceOrDefinitionOrStringified.split('.')
+    _space = fragments[0] || _space
+    _name = fragments[1] || _name
+  } else if (spaceOrDefinitionOrStringified && isObject(spaceOrDefinitionOrStringified)) {
+    _space = spaceOrDefinitionOrStringified.space || _space
+    _name = spaceOrDefinitionOrStringified.name || _name
+  } else if (nameOrDefinition && isObject(nameOrDefinition)) {
+    _space = nameOrDefinition.space || _space
+    _name = nameOrDefinition.name || _name
   }
+  
+  if (typeof _space === 'string') _space = _space.trim()
+  if (typeof _name === 'string') _name = _name.trim()
+
   return { space: _space, name: _name }
 }
 
-export const setStore = (definition, store) => {
+export const setStore = (nameOrDefinition, store) => {
+  const _definition = parseDefinition(isObject(nameOrDefinition) ? nameOrDefinition : { name: nameOrDefinition })
   store = store || {}
-  const _store = getTeddyStore(definition)
-  setState(definition, store.state)
-  setGetters(definition, store.getters)
-  setActions(definition, store.actions)
-  setWatchers(definition, store.watchers)
+  const _store = getTeddyStore(_definition)
+  setState(_definition, store.state)
+  setGetters(_definition, store.getters)
+  setActions(_definition, store.actions)
+  setWatchers(_definition, store.watchers)
   return _store
 }
 
@@ -228,6 +240,22 @@ export const sync = (definition, path, context) => {
   }
 }
 
+export const setFeature = (feature = {}) => {
+  if (typeof feature.teddy === 'function') {
+    feature.teddy(Teddies.value)
+  }
+  for (const space of Object.keys(Teddies.value.spaces || {})) {
+    if (typeof feature.space === 'function') {
+      feature.space(space)
+    }
+    for (const name of Object.keys(Teddies.value.spaces[space].stores || {})) {
+      if (typeof feature.store === 'function') {
+        feature.store(space, name)
+      }
+    }
+  }
+}
+
 export const mapMethods = (mapper = (fn) => fn) => {
   return {
     setStore: mapper(setStore),
@@ -285,6 +313,7 @@ export const getTeddyStore = (spaceOrDefinition, maybeName) => {
       actions: {},
       watchers: [],
       options: {},
+      features: {},
     }
     applyState({ space, name }, {}, Teddies.value.spaces[space].stores[name])
   }

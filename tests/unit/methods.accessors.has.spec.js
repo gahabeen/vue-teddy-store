@@ -6,7 +6,7 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
-describe('methods - checkors - has', () => {
+describe('methods - accessors - has', () => {
   it('has() should check a simple path exists', async () => {
     const space = nanoid()
     const name = nanoid()
