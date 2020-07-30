@@ -1,4 +1,4 @@
-import { getTeddyStore, setWatchers } from '@/index'
+import { getTeddyStore, setWatchers } from './../output'
 
 export const prefix = (space, name) => `teddy:${space}:${name}`
 export default {

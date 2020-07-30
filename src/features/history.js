@@ -1,5 +1,5 @@
 import { reactive } from '@vue/composition-api'
-import { getTeddyStore, setWatchers } from '@/index'
+import { getTeddyStore, setWatchers } from './../output'
 
 export default {
   store(space, name) {

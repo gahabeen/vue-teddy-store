@@ -1,9 +1,9 @@
 /*!
-  * vue-teddy-store v0.1.36
+  * vue-teddy-store v0.2.0
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectStringPath, Vue) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue) {
   'use strict';
 
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
@@ -12,7 +12,7 @@ var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectSt
   const prefix = (space, name) => `teddy:${space}:${name}`;
   var cache = {
     store(space, name) {
-      const store = index$1.getTeddyStore(space, name);
+      const store = getTeddyStore(space, name);
       if (store.features.cache) {
         return
       }
@@ -25,7 +25,7 @@ var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectSt
         const cached = localStorage.getItem(prefix(space, name));
         if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
         // Watch for mutations, save them
-        index$1.setWatchers(
+        setWatchers(
           { space, name },
           {
             handler(newState, oldState) {
@@ -45,7 +45,7 @@ var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectSt
 
   var history = {
     store(space, name) {
-      const store = index$1.getTeddyStore(space, name);
+      const store = getTeddyStore(space, name);
       if (store.features.history) {
         return
       } else {
@@ -53,7 +53,7 @@ var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectSt
       }
 
       store.features.history.stack = VueCompositionMethods.reactive([]);
-      index$1.setWatchers(
+      setWatchers(
         { space, name },
         {
           handler(newState) {
@@ -73,7 +73,7 @@ var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectSt
 
   var sync = {
     store(space, name) {
-      const store = index$1.getTeddyStore(space, name);
+      const store = getTeddyStore(space, name);
       if (store.features.sync) {
         return
       } else {
@@ -693,4 +693,4 @@ var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectSt
 
   return exports;
 
-}({}, index$1, vueCompositionApi, objectStringPath, Vue));
+}({}, vueCompositionApi, objectStringPath, Vue));

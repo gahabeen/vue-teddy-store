@@ -1,9 +1,8 @@
 /*!
-  * vue-teddy-store v0.1.36
+  * vue-teddy-store v0.2.0
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import { getTeddyStore as getTeddyStore$1, setWatchers as setWatchers$1 } from '@/index';
 import VueCompositionMethods__default, { reactive, ref, isRef, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, isValidKey } from 'object-string-path';
 import Vue from 'vue';
@@ -11,7 +10,7 @@ import Vue from 'vue';
 const prefix = (space, name) => `teddy:${space}:${name}`;
 var cache = {
   store(space, name) {
-    const store = getTeddyStore$1(space, name);
+    const store = getTeddyStore(space, name);
     if (store.features.cache) {
       return
     }
@@ -24,7 +23,7 @@ var cache = {
       const cached = localStorage.getItem(prefix(space, name));
       if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
       // Watch for mutations, save them
-      setWatchers$1(
+      setWatchers(
         { space, name },
         {
           handler(newState, oldState) {
@@ -44,7 +43,7 @@ var cache = {
 
 var history = {
   store(space, name) {
-    const store = getTeddyStore$1(space, name);
+    const store = getTeddyStore(space, name);
     if (store.features.history) {
       return
     } else {
@@ -52,7 +51,7 @@ var history = {
     }
 
     store.features.history.stack = reactive([]);
-    setWatchers$1(
+    setWatchers(
       { space, name },
       {
         handler(newState) {
@@ -72,7 +71,7 @@ var history = {
 
 var sync = {
   store(space, name) {
-    const store = getTeddyStore$1(space, name);
+    const store = getTeddyStore(space, name);
     if (store.features.sync) {
       return
     } else {

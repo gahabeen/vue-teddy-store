@@ -1,4 +1,4 @@
-import { getTeddyStore } from '@/index'
+import { getTeddyStore } from './../output'
 import { prefix } from './cache'
 
 export default {
