@@ -55,7 +55,8 @@
     "tailwindcss": "^1.5.2",
     "vue": "^2.6.11",
     "vue-json-pretty": "^1.6.5",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.11",
+    "vuedraggable": "^2.24.0"
   },
   "license": "MIT",
   "repository": {

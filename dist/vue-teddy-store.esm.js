@@ -1,9 +1,9 @@
 /*!
-  * vue-teddy-store v0.2.1
+  * vue-teddy-store v0.2.2
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, ref, isRef, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+import VueCompositionMethods__default, { reactive, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, isValidKey } from 'object-string-path';
 import Vue from 'vue';
 
@@ -119,7 +119,11 @@ function setProp(obj, key, value) {
     if (isComputed(obj) && 'value' in obj && key in obj.value) {
       obj.value[key] = value;
       return obj.value[key]
-    } else {
+    } else if (Array.isArray(obj)) {
+      obj.splice(+key, 1, value);
+      // obj[key] = value;
+      return obj[key]
+    } else if (isObject(obj)) {
       obj[key] = value;
       return obj[key]
     }
@@ -230,7 +234,7 @@ Vue.use(VueCompositionMethods__default);
 const Teddy = Symbol();
 const TeddyStore = Symbol();
 
-const Teddies = ref({
+const Teddies = {
   __options: { devtools: true },
   spaces: {
     // $: {
@@ -247,7 +251,7 @@ const Teddies = ref({
     //   },
     // },
   },
-});
+};
 
 const DEFAULT_SPACE_NAME = '$';
 const DEFAULT_STORE_NAME = '@';
@@ -260,11 +264,11 @@ const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, na
     _space = fragments[0] || _space;
     _name = fragments[1] || _name;
   } else if (spaceOrDefinitionOrStringified && isObject(spaceOrDefinitionOrStringified)) {
-    _space = spaceOrDefinitionOrStringified.space || _space;
+    _space = spaceOrDefinitionOrStringified.space || DEFAULT_SPACE_NAME;
     _name = spaceOrDefinitionOrStringified.name || _name;
   } else if (nameOrDefinition && isObject(nameOrDefinition)) {
     _space = nameOrDefinition.space || _space;
-    _name = nameOrDefinition.name || _name;
+    _name = nameOrDefinition.name || DEFAULT_STORE_NAME;
   }
   
   if (typeof _space === 'string') _space = _space.trim();
@@ -406,9 +410,9 @@ const setWatchers = (definition, watchers) => {
 const exists = (definition) => {
   const { space, name } = parseDefinition(definition);
   if (name !== undefined) {
-    return space in Teddies.value.spaces && 'stores' in Teddies.value.spaces[space] && name in Teddies.value.spaces[space].stores
+    return space in Teddies.spaces && 'stores' in Teddies.spaces[space] && name in Teddies.spaces[space].stores
   } else {
-    return space in Teddies.value.spaces
+    return space in Teddies.spaces
   }
 };
 
@@ -486,13 +490,13 @@ const sync$1 = (definition, path, context) => {
 
 const setFeature = (feature = {}) => {
   if (typeof feature.teddy === 'function') {
-    feature.teddy(Teddies.value);
+    feature.teddy(Teddies);
   }
-  for (const space of Object.keys(Teddies.value.spaces || {})) {
+  for (const space of Object.keys(Teddies.spaces || {})) {
     if (typeof feature.space === 'function') {
       feature.space(space);
     }
-    for (const name of Object.keys(Teddies.value.spaces[space].stores || {})) {
+    for (const name of Object.keys(Teddies.spaces[space].stores || {})) {
       if (typeof feature.store === 'function') {
         feature.store(space, name);
       }
@@ -525,8 +529,8 @@ const mapMethods = (mapper = (fn) => fn) => {
 };
 
 const getTeddy = (space = DEFAULT_SPACE_NAME) => {
-  if (!(space in Teddies.value.spaces)) Teddies.value.spaces[space] = {};
-  return Teddies.value.spaces[space]
+  if (!(space in Teddies.spaces)) Teddies.spaces[space] = {};
+  return Teddies.spaces[space]
 };
 
 const useTeddy = (space = DEFAULT_SPACE_NAME) => {
@@ -548,20 +552,20 @@ const useStore = (name = DEFAULT_STORE_NAME) => {
 const getTeddyStore = (spaceOrDefinition, maybeName) => {
   const { space, name } = parseDefinition(spaceOrDefinition, maybeName);
   getTeddy(space);
-  if (!('stores' in Teddies.value.spaces[space])) {
-    Teddies.value.spaces[space].stores = {};
+  if (!('stores' in Teddies.spaces[space])) {
+    Teddies.spaces[space].stores = {};
   }
-  if (!(name in Teddies.value.spaces[space].stores)) {
-    Teddies.value.spaces[space].stores[name] = {
+  if (!(name in Teddies.spaces[space].stores)) {
+    Teddies.spaces[space].stores[name] = {
       getters: {},
       actions: {},
       watchers: [],
       options: {},
       features: {},
     };
-    applyState({ space, name }, {}, Teddies.value.spaces[space].stores[name]);
+    applyState({ space, name }, {}, Teddies.spaces[space].stores[name]);
   }
-  return Teddies.value.spaces[space].stores[name]
+  return Teddies.spaces[space].stores[name]
 };
 
 const useTeddyStore = (space = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {
@@ -610,7 +614,6 @@ var output = /*#__PURE__*/Object.freeze({
   Teddy: Teddy,
   TeddyStore: TeddyStore,
   Teddies: Teddies,
-  parseDefinition: parseDefinition,
   setStore: setStore,
   makeState: makeState,
   applyState: applyState,
@@ -649,4 +652,4 @@ const install = (VueInstance) => {
   VueInstance.prototype.$teddy = output;
 };
 
-export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getTeddyStore, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, parseDefinition, provideTeddy, provideTeddyStore, remove, reset, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy, useTeddyStore };
+export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getTeddyStore, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddy, provideTeddyStore, remove, reset, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy, useTeddyStore };
