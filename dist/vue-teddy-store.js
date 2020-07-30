@@ -3,11 +3,102 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMethods) {
+var VueTeddyStore = (function (exports, index$1, VueCompositionMethods, objectStringPath, Vue) {
   'use strict';
 
-  Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
+  Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
+
+  const prefix = (space, name) => `teddy:${space}:${name}`;
+  var cache = {
+    store(space, name) {
+      const store = index$1.getTeddyStore(space, name);
+      if (store.features.cache) {
+        return
+      }
+
+      /* istanbul ignore next */
+      const localStorage = window.localStorage || global.localStorage || {};
+      /* istanbul ignore next */
+      if (localStorage) {
+        // Fetched saved state when exists
+        const cached = localStorage.getItem(prefix(space, name));
+        if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
+        // Watch for mutations, save them
+        index$1.setWatchers(
+          { space, name },
+          {
+            handler(newState, oldState) {
+              if (newState !== oldState) {
+                localStorage.setItem(prefix(space, name), JSON.stringify(newState));
+              }
+            },
+            immediate: true,
+            deep: true,
+          }
+        );
+
+        store.features.cache = true;
+      }
+    },
+  };
+
+  var history = {
+    store(space, name) {
+      const store = index$1.getTeddyStore(space, name);
+      if (store.features.history) {
+        return
+      } else {
+        store.features.history = {};
+      }
+
+      store.features.history.stack = VueCompositionMethods.reactive([]);
+      index$1.setWatchers(
+        { space, name },
+        {
+          handler(newState) {
+            store.features.history.stack.push({
+              state: newState,
+              ts: new Date().getTime(),
+            });
+          },
+          immediate: true,
+          deep: true,
+        }
+      );
+
+      store.features.history.installed = true;
+    },
+  };
+
+  var sync = {
+    store(space, name) {
+      const store = index$1.getTeddyStore(space, name);
+      if (store.features.sync) {
+        return
+      } else {
+        store.features.sync = {};
+      }
+
+      /* istanbul ignore next */
+      if (window) {
+        window.addEventListener('storage', (e) => {
+          if (e.key === prefix(name)) {
+            store.state = { ...store.state, ...JSON.parse(e.newValue) };
+          }
+        });
+      }
+
+      store.features.sync.installed = true;
+    },
+  };
+
+  var index = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    cache: cache,
+    history: history,
+    sync: sync
+  });
 
   function isComputed(obj) {
     if (!objectStringPath.isObject(obj) || (objectStringPath.isObject(obj) && !('value' in obj))) {
@@ -163,23 +254,35 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
   const DEFAULT_SPACE_NAME = '$';
   const DEFAULT_STORE_NAME = '@';
 
-  const parseDefinition = (spaceOrDefinition = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {
-    let _space = spaceOrDefinition;
-    let _name = name;
-    if (objectStringPath.isObject(spaceOrDefinition)) {
-      _space = spaceOrDefinition.space || _space;
-      _name = spaceOrDefinition.name || _name;
+  const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, nameOrDefinition = DEFAULT_STORE_NAME) => {
+    let _space = spaceOrDefinitionOrStringified;
+    let _name = nameOrDefinition;
+    if (typeof spaceOrDefinitionOrStringified === 'string' && spaceOrDefinitionOrStringified.includes('.')) {
+      const fragments = spaceOrDefinitionOrStringified.split('.');
+      _space = fragments[0] || _space;
+      _name = fragments[1] || _name;
+    } else if (spaceOrDefinitionOrStringified && objectStringPath.isObject(spaceOrDefinitionOrStringified)) {
+      _space = spaceOrDefinitionOrStringified.space || _space;
+      _name = spaceOrDefinitionOrStringified.name || _name;
+    } else if (nameOrDefinition && objectStringPath.isObject(nameOrDefinition)) {
+      _space = nameOrDefinition.space || _space;
+      _name = nameOrDefinition.name || _name;
     }
+    
+    if (typeof _space === 'string') _space = _space.trim();
+    if (typeof _name === 'string') _name = _name.trim();
+
     return { space: _space, name: _name }
   };
 
-  const setStore = (definition, store) => {
+  const setStore = (nameOrDefinition, store) => {
+    const _definition = parseDefinition(objectStringPath.isObject(nameOrDefinition) ? nameOrDefinition : { name: nameOrDefinition });
     store = store || {};
-    const _store = getTeddyStore(definition);
-    setState(definition, store.state);
-    setGetters(definition, store.getters);
-    setActions(definition, store.actions);
-    setWatchers(definition, store.watchers);
+    const _store = getTeddyStore(_definition);
+    setState(_definition, store.state);
+    setGetters(_definition, store.getters);
+    setActions(_definition, store.actions);
+    setWatchers(_definition, store.watchers);
     return _store
   };
 
@@ -353,7 +456,7 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     }
   };
 
-  const sync = (definition, path, context) => {
+  const sync$1 = (definition, path, context) => {
     const _sync = (path, context) => {
       return {
         get: getter(definition, path, context),
@@ -383,6 +486,22 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     }
   };
 
+  const setFeature = (feature = {}) => {
+    if (typeof feature.teddy === 'function') {
+      feature.teddy(Teddies.value);
+    }
+    for (const space of Object.keys(Teddies.value.spaces || {})) {
+      if (typeof feature.space === 'function') {
+        feature.space(space);
+      }
+      for (const name of Object.keys(Teddies.value.spaces[space].stores || {})) {
+        if (typeof feature.store === 'function') {
+          feature.store(space, name);
+        }
+      }
+    }
+  };
+
   const mapMethods = (mapper = (fn) => fn) => {
     return {
       setStore: mapper(setStore),
@@ -403,7 +522,7 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
       getter: mapper(getter),
       set: mapper(set$1),
       setter: mapper(setter),
-      sync: mapper(sync),
+      sync: mapper(sync$1),
     }
   };
 
@@ -440,6 +559,7 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
         actions: {},
         watchers: [],
         options: {},
+        features: {},
       };
       applyState({ space, name }, {}, Teddies.value.spaces[space].stores[name]);
     }
@@ -488,6 +608,7 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
   var output = /*#__PURE__*/Object.freeze({
     __proto__: null,
     accessors: accessors,
+    features: index,
     Teddy: Teddy,
     TeddyStore: TeddyStore,
     Teddies: Teddies,
@@ -510,7 +631,8 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
     getter: getter,
     set: set$1,
     setter: setter,
-    sync: sync,
+    sync: sync$1,
+    setFeature: setFeature,
     mapMethods: mapMethods,
     getTeddy: getTeddy,
     useTeddy: useTeddy,
@@ -536,6 +658,7 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
   exports.applyState = applyState;
   exports.computed = computed;
   exports.exists = exists;
+  exports.features = index;
   exports.get = get$1;
   exports.getStore = getStore;
   exports.getTeddy = getTeddy;
@@ -557,16 +680,17 @@ var VueTeddyStore = (function (exports, objectStringPath, Vue, VueCompositionMet
   exports.reset = reset;
   exports.set = set$1;
   exports.setActions = setActions;
+  exports.setFeature = setFeature;
   exports.setGetters = setGetters;
   exports.setState = setState;
   exports.setStore = setStore;
   exports.setWatchers = setWatchers;
   exports.setter = setter;
-  exports.sync = sync;
+  exports.sync = sync$1;
   exports.useStore = useStore;
   exports.useTeddy = useTeddy;
   exports.useTeddyStore = useTeddyStore;
 
   return exports;
 
-}({}, objectStringPath, Vue, vueCompositionApi));
+}({}, index$1, vueCompositionApi, objectStringPath, Vue));

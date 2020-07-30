@@ -3,9 +3,101 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
+import { getTeddyStore as getTeddyStore$1, setWatchers as setWatchers$1 } from '@/index';
+import VueCompositionMethods__default, { reactive, ref, isRef, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, isValidKey } from 'object-string-path';
 import Vue from 'vue';
-import VueCompositionMethods__default, { ref, isRef, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+
+const prefix = (space, name) => `teddy:${space}:${name}`;
+var cache = {
+  store(space, name) {
+    const store = getTeddyStore$1(space, name);
+    if (store.features.cache) {
+      return
+    }
+
+    /* istanbul ignore next */
+    const localStorage = window.localStorage || global.localStorage || {};
+    /* istanbul ignore next */
+    if (localStorage) {
+      // Fetched saved state when exists
+      const cached = localStorage.getItem(prefix(space, name));
+      if (cached) store.state = { ...store.state, ...JSON.parse(cached) };
+      // Watch for mutations, save them
+      setWatchers$1(
+        { space, name },
+        {
+          handler(newState, oldState) {
+            if (newState !== oldState) {
+              localStorage.setItem(prefix(space, name), JSON.stringify(newState));
+            }
+          },
+          immediate: true,
+          deep: true,
+        }
+      );
+
+      store.features.cache = true;
+    }
+  },
+};
+
+var history = {
+  store(space, name) {
+    const store = getTeddyStore$1(space, name);
+    if (store.features.history) {
+      return
+    } else {
+      store.features.history = {};
+    }
+
+    store.features.history.stack = reactive([]);
+    setWatchers$1(
+      { space, name },
+      {
+        handler(newState) {
+          store.features.history.stack.push({
+            state: newState,
+            ts: new Date().getTime(),
+          });
+        },
+        immediate: true,
+        deep: true,
+      }
+    );
+
+    store.features.history.installed = true;
+  },
+};
+
+var sync = {
+  store(space, name) {
+    const store = getTeddyStore$1(space, name);
+    if (store.features.sync) {
+      return
+    } else {
+      store.features.sync = {};
+    }
+
+    /* istanbul ignore next */
+    if (window) {
+      window.addEventListener('storage', (e) => {
+        if (e.key === prefix(name)) {
+          store.state = { ...store.state, ...JSON.parse(e.newValue) };
+        }
+      });
+    }
+
+    store.features.sync.installed = true;
+  },
+};
+
+var index = /*#__PURE__*/Object.freeze({
+  __proto__: null,
+  cache: cache,
+  history: history,
+  sync: sync
+});
 
 function isComputed(obj) {
   if (!isObject(obj) || (isObject(obj) && !('value' in obj))) {
@@ -161,23 +253,35 @@ const Teddies = ref({
 const DEFAULT_SPACE_NAME = '$';
 const DEFAULT_STORE_NAME = '@';
 
-const parseDefinition = (spaceOrDefinition = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {
-  let _space = spaceOrDefinition;
-  let _name = name;
-  if (isObject(spaceOrDefinition)) {
-    _space = spaceOrDefinition.space || _space;
-    _name = spaceOrDefinition.name || _name;
+const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, nameOrDefinition = DEFAULT_STORE_NAME) => {
+  let _space = spaceOrDefinitionOrStringified;
+  let _name = nameOrDefinition;
+  if (typeof spaceOrDefinitionOrStringified === 'string' && spaceOrDefinitionOrStringified.includes('.')) {
+    const fragments = spaceOrDefinitionOrStringified.split('.');
+    _space = fragments[0] || _space;
+    _name = fragments[1] || _name;
+  } else if (spaceOrDefinitionOrStringified && isObject(spaceOrDefinitionOrStringified)) {
+    _space = spaceOrDefinitionOrStringified.space || _space;
+    _name = spaceOrDefinitionOrStringified.name || _name;
+  } else if (nameOrDefinition && isObject(nameOrDefinition)) {
+    _space = nameOrDefinition.space || _space;
+    _name = nameOrDefinition.name || _name;
   }
+  
+  if (typeof _space === 'string') _space = _space.trim();
+  if (typeof _name === 'string') _name = _name.trim();
+
   return { space: _space, name: _name }
 };
 
-const setStore = (definition, store) => {
+const setStore = (nameOrDefinition, store) => {
+  const _definition = parseDefinition(isObject(nameOrDefinition) ? nameOrDefinition : { name: nameOrDefinition });
   store = store || {};
-  const _store = getTeddyStore(definition);
-  setState(definition, store.state);
-  setGetters(definition, store.getters);
-  setActions(definition, store.actions);
-  setWatchers(definition, store.watchers);
+  const _store = getTeddyStore(_definition);
+  setState(_definition, store.state);
+  setGetters(_definition, store.getters);
+  setActions(_definition, store.actions);
+  setWatchers(_definition, store.watchers);
   return _store
 };
 
@@ -351,7 +455,7 @@ const setter = (definition, path, context) => {
   }
 };
 
-const sync = (definition, path, context) => {
+const sync$1 = (definition, path, context) => {
   const _sync = (path, context) => {
     return {
       get: getter(definition, path, context),
@@ -381,6 +485,22 @@ const sync = (definition, path, context) => {
   }
 };
 
+const setFeature = (feature = {}) => {
+  if (typeof feature.teddy === 'function') {
+    feature.teddy(Teddies.value);
+  }
+  for (const space of Object.keys(Teddies.value.spaces || {})) {
+    if (typeof feature.space === 'function') {
+      feature.space(space);
+    }
+    for (const name of Object.keys(Teddies.value.spaces[space].stores || {})) {
+      if (typeof feature.store === 'function') {
+        feature.store(space, name);
+      }
+    }
+  }
+};
+
 const mapMethods = (mapper = (fn) => fn) => {
   return {
     setStore: mapper(setStore),
@@ -401,7 +521,7 @@ const mapMethods = (mapper = (fn) => fn) => {
     getter: mapper(getter),
     set: mapper(set$1),
     setter: mapper(setter),
-    sync: mapper(sync),
+    sync: mapper(sync$1),
   }
 };
 
@@ -438,6 +558,7 @@ const getTeddyStore = (spaceOrDefinition, maybeName) => {
       actions: {},
       watchers: [],
       options: {},
+      features: {},
     };
     applyState({ space, name }, {}, Teddies.value.spaces[space].stores[name]);
   }
@@ -486,6 +607,7 @@ const computed = (definition) => {
 var output = /*#__PURE__*/Object.freeze({
   __proto__: null,
   accessors: accessors,
+  features: index,
   Teddy: Teddy,
   TeddyStore: TeddyStore,
   Teddies: Teddies,
@@ -508,7 +630,8 @@ var output = /*#__PURE__*/Object.freeze({
   getter: getter,
   set: set$1,
   setter: setter,
-  sync: sync,
+  sync: sync$1,
+  setFeature: setFeature,
   mapMethods: mapMethods,
   getTeddy: getTeddy,
   useTeddy: useTeddy,
@@ -527,4 +650,4 @@ const install = (VueInstance) => {
   VueInstance.prototype.$teddy = output;
 };
 
-export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, get$1 as get, getStore, getTeddy, getTeddyStore, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, parseDefinition, provideTeddy, provideTeddyStore, remove, reset, set$1 as set, setActions, setGetters, setState, setStore, setWatchers, setter, sync, useStore, useTeddy, useTeddyStore };
+export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getTeddyStore, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, parseDefinition, provideTeddy, provideTeddyStore, remove, reset, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy, useTeddyStore };
