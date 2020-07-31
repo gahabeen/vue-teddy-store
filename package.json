@@ -1,6 +1,6 @@
 {
   "name": "vue-teddy-store",
-  "version": "0.2.31",
+  "version": "0.2.32",
   "description": "🧸 Next-gen simple store for Vue",
   "author": "Gabin Desserprit <desserprit.gabin@gmail.com>",
   "scripts": {
