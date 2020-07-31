@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.3
+  * vue-teddy-store v0.2.31
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -270,7 +270,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       _space = nameOrDefinition.space || _space;
       _name = nameOrDefinition.name || DEFAULT_STORE_NAME;
     }
-    
+
     if (typeof _space === 'string') _space = _space.trim();
     if (typeof _name === 'string') _name = _name.trim();
 
@@ -436,14 +436,14 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     return teddyHas(store, path, context)
   };
 
-  const get$1 = (definition, path, context) => {
+  const get$1 = (definition, path, context, orValue) => {
     const store = getTeddyStore(definition);
-    return teddyGet(store, path, context)
+    return teddyGet(store, path, context) || orValue
   };
 
-  const getter = (definition, path, context) => {
+  const getter = (definition, path, context, orValue) => {
     return function() {
-      return get$1(definition, path, context || this)
+      return get$1(definition, path, context || this, orValue)
     }
   };
 
