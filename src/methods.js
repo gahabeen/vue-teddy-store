@@ -9,25 +9,25 @@ const DEFAULT_SPACE_NAME = '$'
 const DEFAULT_STORE_NAME = '@'
 
 const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, nameOrDefinition = DEFAULT_STORE_NAME) => {
-  let _space = spaceOrDefinitionOrStringified;
-  let _name = nameOrDefinition;
+  let _space = spaceOrDefinitionOrStringified
+  let _name = nameOrDefinition
   if (typeof spaceOrDefinitionOrStringified === 'string' && spaceOrDefinitionOrStringified.includes('.')) {
-    const fragments = spaceOrDefinitionOrStringified.split('.');
-    _space = fragments[0] || _space;
-    _name = fragments[1] || _name;
+    const fragments = spaceOrDefinitionOrStringified.split('.')
+    _space = fragments[0] || _space
+    _name = fragments[1] || _name
   } else if (spaceOrDefinitionOrStringified && isObject(spaceOrDefinitionOrStringified)) {
-    _space = spaceOrDefinitionOrStringified.space || DEFAULT_SPACE_NAME;
-    _name = spaceOrDefinitionOrStringified.name || _name;
+    _space = spaceOrDefinitionOrStringified.space || DEFAULT_SPACE_NAME
+    _name = spaceOrDefinitionOrStringified.name || _name
   } else if (nameOrDefinition && isObject(nameOrDefinition)) {
-    _space = nameOrDefinition.space || _space;
-    _name = nameOrDefinition.name || DEFAULT_STORE_NAME;
+    _space = nameOrDefinition.space || _space
+    _name = nameOrDefinition.name || DEFAULT_STORE_NAME
   }
-  
-  if (typeof _space === 'string') _space = _space.trim();
-  if (typeof _name === 'string') _name = _name.trim();
+
+  if (typeof _space === 'string') _space = _space.trim()
+  if (typeof _name === 'string') _name = _name.trim()
 
   return { space: _space, name: _name }
-};
+}
 
 export const setStore = (nameOrDefinition, store) => {
   const _definition = parseDefinition(isObject(nameOrDefinition) ? nameOrDefinition : { name: nameOrDefinition })
@@ -188,14 +188,14 @@ export const has = (definition, path, context) => {
   return accessors.teddyHas(store, path, context)
 }
 
-export const get = (definition, path, context) => {
+export const get = (definition, path, context, orValue) => {
   const store = getTeddyStore(definition)
-  return accessors.teddyGet(store, path, context)
+  return accessors.teddyGet(store, path, context) || orValue
 }
 
-export const getter = (definition, path, context) => {
+export const getter = (definition, path, context, orValue) => {
   return function() {
-    return get(definition, path, context || this)
+    return get(definition, path, context || this, orValue)
   }
 }
 
