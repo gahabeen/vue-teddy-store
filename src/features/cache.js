@@ -14,15 +14,13 @@ export default {
     if (localStorage) {
       // Fetched saved state when exists
       const cached = localStorage.getItem(prefix(space, name))
-      if (cached) store.state = { ...store.state, ...JSON.parse(cached) }
+      if (cached) store.state = JSON.parse(cached)
       // Watch for mutations, save them
       setWatchers(
         { space, name },
         {
-          handler(newState, oldState) {
-            if (newState !== oldState) {
-              localStorage.setItem(prefix(space, name), JSON.stringify(newState))
-            }
+          handler(newState) {
+            localStorage.setItem(prefix(space, name), JSON.stringify(newState))
           },
           immediate: true,
           deep: true,
