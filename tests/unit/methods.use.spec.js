@@ -1,4 +1,4 @@
-import { useTeddy, getTeddyStore, useTeddyStore, exists } from '@/index'
+import { useTeddy, getStore, useStore, exists } from '@/index'
 import VueCompositionApi from '@vue/composition-api'
 import { nanoid } from 'nanoid'
 
@@ -13,24 +13,24 @@ describe('methods - use', () => {
     expect(teddy.exists(name)).toBe(true)
   })
 
-  it('useTeddyStore() should provide a by-default namespaced store (by-default namespaced)', async () => {
-    getTeddyStore()
-    useTeddyStore()
-    expect(exists('$', '@')).toBe(true)
+  it('useStore() should provide a by-default namespaced store (by-default namespaced)', async () => {
+    getStore()
+    useStore()
+    expect(exists('$/@')).toBe(true)
   })
 
   it('useTeddy() should provide a teddy namespaced instance', async () => {
     const space = nanoid()
-    getTeddyStore(space)
+    getStore(space)
     useTeddy(space)
-    expect(exists(space)).toBe(true)
+    expect(exists(space + "/")).toBe(true)
   })
 
-  it('useTeddyStore() should provide a by-default namespaced store (by-default namespaced)', async () => {
+  it('useStore() should provide a by-default namespaced store (by-default namespaced)', async () => {
     const space = nanoid()
     const name = nanoid()
-    getTeddyStore({ space, name })
-    useTeddyStore({ space, name })
+    getStore({ space, name })
+    useStore({ space, name })
     expect(exists({ space, name })).toBe(true)
   })
 })

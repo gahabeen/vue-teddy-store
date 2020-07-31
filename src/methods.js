@@ -8,31 +8,49 @@ import * as utils from './utils'
 const DEFAULT_SPACE_NAME = '$'
 const DEFAULT_STORE_NAME = '@'
 
-const parseDefinition = (spaceOrDefinitionOrStringified = DEFAULT_SPACE_NAME, nameOrDefinition = DEFAULT_STORE_NAME) => {
-  let _space = spaceOrDefinitionOrStringified
-  let _name = nameOrDefinition
-  if (typeof spaceOrDefinitionOrStringified === 'string' && spaceOrDefinitionOrStringified.includes('.')) {
-    const fragments = spaceOrDefinitionOrStringified.split('.')
-    _space = fragments[0] || _space
-    _name = fragments[1] || _name
-  } else if (spaceOrDefinitionOrStringified && isObject(spaceOrDefinitionOrStringified)) {
-    _space = spaceOrDefinitionOrStringified.space || DEFAULT_SPACE_NAME
-    _name = spaceOrDefinitionOrStringified.name || _name
-  } else if (nameOrDefinition && isObject(nameOrDefinition)) {
-    _space = nameOrDefinition.space || _space
-    _name = nameOrDefinition.name || DEFAULT_STORE_NAME
+const parseDefinition = (definition) => {
+  let _space
+  let _name
+
+  if (isObject(definition)) {
+    _space = 'space' in definition ? definition.space : DEFAULT_SPACE_NAME
+    _name = 'name' in definition ? definition.name : DEFAULT_STORE_NAME
+  } else if (typeof definition === 'string') {
+    if (definition.includes('.')) {
+      let [space, name] = definition.split('.')
+      _space = space
+      _name = name
+    } else if (definition.includes('/')) {
+      let [space, name] = definition.split('/')
+      _space = space
+      _name = name
+    } else {
+      _space = DEFAULT_SPACE_NAME
+      _name = definition
+    }
+    console.log('parseDefinition', definition, { space: _space, name: _name })
   }
 
-  if (typeof _space === 'string') _space = _space.trim()
-  if (typeof _name === 'string') _name = _name.trim()
+  if (typeof _space === 'string') {
+    _space = _space.trim()
+    if (_space.length === 0) {
+      _space = undefined
+    }
+  }
+  if (typeof _name === 'string') {
+    _name = _name.trim()
+    if (_name.length === 0) {
+      _name = undefined
+    }
+  }
 
   return { space: _space, name: _name }
 }
 
-export const setStore = (nameOrDefinition, store) => {
-  const _definition = parseDefinition(isObject(nameOrDefinition) ? nameOrDefinition : { name: nameOrDefinition })
+export const setStore = (definition, store) => {
+  const _definition = parseDefinition(definition)
   store = store || {}
-  const _store = getTeddyStore(_definition)
+  const _store = getStore(_definition)
   setState(_definition, store.state)
   setGetters(_definition, store.getters)
   setActions(_definition, store.actions)
@@ -59,12 +77,12 @@ export const applyState = (definition, state, destination = {}) => {
 }
 
 export const setState = (definition, state) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   applyState(definition, state, store)
 }
 
 export const makeGetters = (definition, getters) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   getters = getters || {}
   return Object.keys(getters).reduce((acc, key) => {
     if (utils.isComputed(getters[key])) {
@@ -77,13 +95,13 @@ export const makeGetters = (definition, getters) => {
 }
 
 export const setGetters = (definition, getters) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   store.getters = { ...(store.getters || {}), ...makeGetters(definition, getters) }
   return store
 }
 
 export const makeActions = (definition, actions) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   actions = actions || {}
   return Object.keys(actions).reduce((acc, key) => {
     if (typeof actions[key] === 'function') {
@@ -94,14 +112,14 @@ export const makeActions = (definition, actions) => {
 }
 
 export const setActions = (definition, actions) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   store.actions = { ...(store.actions || {}), ...makeActions(definition, actions) }
   return store
 }
 
 export const makeWatchers = (definition, watchers) => {
   const { name } = parseDefinition(definition)
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
 
   const _watchers = []
   if (Array.isArray(watchers)) {
@@ -154,7 +172,7 @@ export const makeWatchers = (definition, watchers) => {
 }
 
 export const setWatchers = (definition, watchers) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   store.watchers = [...(store.watchers || []), ...makeWatchers(definition, watchers)]
   return store
 }
@@ -184,12 +202,13 @@ export const reset = (definition) => {
 }
 
 export const run = (definition, actionName, ...args) => {
-  const { store } = useTeddyStore(definition)
+  const { store } = useStore(definition)
   if (actionName in store.actions) {
     try {
       return store.actions[actionName](...args)
     } catch (error) {
       console.error(`Something went wrong with the action '${actionName}'`)
+      console.error(error)
     }
   } else {
     console.warn(`Couldn't find the action '${actionName}' to run.`)
@@ -197,12 +216,12 @@ export const run = (definition, actionName, ...args) => {
 }
 
 export const has = (definition, path, context) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   return accessors.teddyHas(store, path, context)
 }
 
 export const get = (definition, path, context, orValue) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   return accessors.teddyGet(store, path, context) || orValue
 }
 
@@ -213,7 +232,7 @@ export const getter = (definition, path, context, orValue) => {
 }
 
 export const set = (definition, path, value, context) => {
-  const store = getTeddyStore(definition)
+  const store = getStore(definition)
   accessors.teddySet(store, path, value, context)
 }
 
@@ -305,22 +324,20 @@ export const useTeddy = (space = DEFAULT_SPACE_NAME) => {
   return { store, ...mapMethods(proxy) }
 }
 
-export const getStore = (name = DEFAULT_STORE_NAME) => {
-  return getTeddyStore(DEFAULT_SPACE_NAME, name)
-}
+// export const useStore = (name = DEFAULT_STORE_NAME) => {
+//   const store = getStore(name)
+//   const proxy = (fn) => (...fnArgs) => fn({ name, space: DEFAULT_SPACE_NAME }, ...fnArgs)
+//   return { store, ...mapMethods(proxy) }
+// }
 
-export const useStore = (name = DEFAULT_STORE_NAME) => {
-  const store = getStore(name)
-  const proxy = (fn) => (...fnArgs) => fn({ name, space: DEFAULT_SPACE_NAME }, ...fnArgs)
-  return { store, ...mapMethods(proxy) }
-}
-
-export const getTeddyStore = (spaceOrDefinition, maybeName) => {
-  const { space, name } = parseDefinition(spaceOrDefinition, maybeName)
+export const getStore = (definition) => {
+  const { space = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME } = parseDefinition(definition)
   getTeddy(space)
+
   if (!('stores' in Teddies.spaces[space])) {
     Teddies.spaces[space].stores = {}
   }
+
   if (!(name in Teddies.spaces[space].stores)) {
     Teddies.spaces[space].stores[name] = {
       getters: {},
@@ -334,18 +351,18 @@ export const getTeddyStore = (spaceOrDefinition, maybeName) => {
   return Teddies.spaces[space].stores[name]
 }
 
-export const useTeddyStore = (space = DEFAULT_SPACE_NAME, name = DEFAULT_STORE_NAME) => {
-  const store = getTeddyStore(space, name)
-  const proxy = (fn) => (...fnArgs) => fn({ space, name }, ...fnArgs)
+export const useStore = (definition) => {
+  const store = getStore(definition)
+  const proxy = (fn) => (...fnArgs) => fn(definition, ...fnArgs)
   return { store, ...mapMethods(proxy) }
 }
 
-export const provideTeddy = (space = DEFAULT_SPACE_NAME) => {
-  VueCompositionMethods.provide(Teddy, useTeddy(space))
-}
+// export const provideTeddy = (space = DEFAULT_SPACE_NAME) => {
+//   VueCompositionMethods.provide(Teddy, useTeddy(space))
+// }
 
-export const provideTeddyStore = (...args) => {
-  VueCompositionMethods.provide(TeddyStore, useTeddyStore(...args))
+export const provideTeddyStore = (definition) => {
+  VueCompositionMethods.provide(TeddyStore, useStore(definition))
 }
 
 export const injectTeddy = () => {

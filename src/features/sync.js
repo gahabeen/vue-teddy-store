@@ -1,9 +1,9 @@
-import { getTeddyStore } from './../output'
+import { getStore } from './../output'
 import { prefix } from './cache'
 
 export default {
   store(space, name) {
-    const store = getTeddyStore(space, name)
+    const store = getStore({ space, name })
     if (store.features.sync) {
       return
     } else {

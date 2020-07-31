@@ -1,4 +1,4 @@
-import { setStore, useTeddyStore, install } from '@/index'
+import { setStore, useStore, install, has } from '@/index'
 import { createLocalVue, mount } from '@vue/test-utils'
 import VueCompositionApi from '@vue/composition-api'
 import flushPromises from 'flush-promises'
@@ -24,7 +24,7 @@ describe('use cases - ', () => {
       }
     )
 
-    const { has } = useTeddyStore(space, name)
+    const { has } = useStore({ space, name })
 
     mount(
       {
@@ -61,6 +61,9 @@ describe('use cases - ', () => {
         },
       }
     )
+
+    console.log(has(`${space}.${name}`, 'products.0.name'))
+    // console.log(has({ space, name }, 'products.0.name'))
 
     const wrapper = mount(
       {

@@ -1,4 +1,4 @@
-import { getTeddyStore, makeWatchers, setStore } from '@/index'
+import { getStore, makeWatchers, setStore } from '@/index'
 import VueCompositionApi from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
@@ -10,7 +10,7 @@ describe('methods - watchers', () => {
   it('makeWatchers() should create a general watcher from function', async () => {
     const space = nanoid()
     const name = nanoid()
-    const store = getTeddyStore({ space, name })
+    const store = getStore({ space, name })
     let hit = 0
     makeWatchers({ space, name }, () => (hit = hit + 1))
     store.state = { newKey: 'newValue' }
@@ -21,7 +21,7 @@ describe('methods - watchers', () => {
   it('makeWatchers() should create a watchers from array of functions', async () => {
     const space = nanoid()
     const name = nanoid()
-    const store = getTeddyStore({ space, name })
+    const store = getStore({ space, name })
     let hit = 0
     makeWatchers({ space, name }, [() => (hit = hit + 1), () => (hit = hit + 1), () => (hit = hit + 1)])
     store.state = { newKey: 'newValue' }
@@ -32,7 +32,7 @@ describe('methods - watchers', () => {
   it('makeWatchers() should create a watchers from array of objects with handlers', async () => {
     const space = nanoid()
     const name = nanoid()
-    const store = getTeddyStore({ space, name })
+    const store = getStore({ space, name })
     let hit = 0
     makeWatchers({ space, name }, [
       {

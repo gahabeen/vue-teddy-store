@@ -17,16 +17,15 @@
 
 Vue Teddy Store is the easiest - next-generation - store for Vue application. <a href="http://vueteddystore.com" target="_blank">Check out the documentation</a> to find more about its minimal & delightful API.
 
-<br />  
+<br />
 
 <div align="center"> 
   <a href="http://vueteddystore.com" target="_blank">
     <img alt="Getting started"  src="assets/getting-started.png"> 
   </a>
-</div>  
+</div>
 
-<br />  
-
+<br />
 
 ## Example
 
@@ -37,7 +36,7 @@ Vue Teddy Store is the easiest - next-generation - store for Vue application. <a
 
   export default {
     computed: {
-      products: sync('products.items'),
+      products: sync('products', 'items'),
     },
   }
 </script>
@@ -46,11 +45,9 @@ Vue Teddy Store is the easiest - next-generation - store for Vue application. <a
 <script>
   /* part of your main.js file */
   import Vue from 'vue'
-  import TeddyStore from 'vue-teddy-store'
+  import { setStore, install } from 'vue-teddy-store'
 
-  const stores = new TeddyStore()
-
-  stores.add('products', {
+  setStore('products', {
     state: {
       items: [
         {
@@ -60,7 +57,7 @@ Vue Teddy Store is the easiest - next-generation - store for Vue application. <a
     },
   })
 
-  Vue.use(stores)
+  Vue.use(install)
   /* end part of your main.js file */
 </script>
 ```

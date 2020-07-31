@@ -1,9 +1,9 @@
-import { getTeddyStore, setWatchers } from './../output'
+import { getStore, setWatchers } from './../output'
 
 export const prefix = (space, name) => `teddy:${space}:${name}`
 export default {
   store(space, name) {
-    const store = getTeddyStore(space, name)
+    const store = getStore({ space, name })
     if (store.features.cache) {
       return
     }

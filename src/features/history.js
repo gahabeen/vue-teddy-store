@@ -1,9 +1,9 @@
 import { reactive } from '@vue/composition-api'
-import { getTeddyStore, setWatchers } from './../output'
+import { getStore, setWatchers } from './../output'
 
 export default {
   store(space, name) {
-    const store = getTeddyStore(space, name)
+    const store = getStore({ space, name })
     if (store.features.history) {
       return
     } else {
