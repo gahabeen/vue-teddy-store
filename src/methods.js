@@ -183,6 +183,19 @@ export const reset = (definition) => {
   // }
 }
 
+export const run = (definition, actionName, ...args) => {
+  const { store } = useTeddyStore(definition)
+  if (actionName in store.actions) {
+    try {
+      return store.actions[actionName](...args)
+    } catch (error) {
+      console.error(`Something went wrong with the action '${actionName}'`)
+    }
+  } else {
+    console.warn(`Couldn't find the action '${actionName}' to run.`)
+  }
+}
+
 export const has = (definition, path, context) => {
   const store = getTeddyStore(definition)
   return accessors.teddyHas(store, path, context)
@@ -271,6 +284,7 @@ export const mapMethods = (mapper = (fn) => fn) => {
     exists: mapper(exists),
     remove: mapper(remove),
     reset: mapper(reset),
+    run: mapper(run),
     has: mapper(has),
     get: mapper(get),
     getter: mapper(getter),
