@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.31
+  * vue-teddy-store v0.2.33
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -431,6 +431,19 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     // }
   };
 
+  const run = (definition, actionName, ...args) => {
+    const { store } = useTeddyStore(definition);
+    if (actionName in store.actions) {
+      try {
+        return store.actions[actionName](...args)
+      } catch (error) {
+        console.error(`Something went wrong with the action '${actionName}'`);
+      }
+    } else {
+      console.warn(`Couldn't find the action '${actionName}' to run.`);
+    }
+  };
+
   const has$1 = (definition, path, context) => {
     const store = getTeddyStore(definition);
     return teddyHas(store, path, context)
@@ -519,6 +532,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       exists: mapper(exists),
       remove: mapper(remove),
       reset: mapper(reset),
+      run: mapper(run),
       has: mapper(has$1),
       get: mapper(get$1),
       getter: mapper(getter),
@@ -627,6 +641,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     exists: exists,
     remove: remove,
     reset: reset,
+    run: run,
     has: has$1,
     get: get$1,
     getter: getter,
@@ -678,6 +693,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   exports.provideTeddyStore = provideTeddyStore;
   exports.remove = remove;
   exports.reset = reset;
+  exports.run = run;
   exports.set = set$1;
   exports.setActions = setActions;
   exports.setFeature = setFeature;

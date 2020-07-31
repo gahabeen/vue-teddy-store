@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.31
+  * vue-teddy-store v0.2.33
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -429,6 +429,19 @@ const reset = (definition) => {
   // }
 };
 
+const run = (definition, actionName, ...args) => {
+  const { store } = useTeddyStore(definition);
+  if (actionName in store.actions) {
+    try {
+      return store.actions[actionName](...args)
+    } catch (error) {
+      console.error(`Something went wrong with the action '${actionName}'`);
+    }
+  } else {
+    console.warn(`Couldn't find the action '${actionName}' to run.`);
+  }
+};
+
 const has$1 = (definition, path, context) => {
   const store = getTeddyStore(definition);
   return teddyHas(store, path, context)
@@ -517,6 +530,7 @@ const mapMethods = (mapper = (fn) => fn) => {
     exists: mapper(exists),
     remove: mapper(remove),
     reset: mapper(reset),
+    run: mapper(run),
     has: mapper(has$1),
     get: mapper(get$1),
     getter: mapper(getter),
@@ -625,6 +639,7 @@ var output = /*#__PURE__*/Object.freeze({
   exists: exists,
   remove: remove,
   reset: reset,
+  run: run,
   has: has$1,
   get: get$1,
   getter: getter,
@@ -650,4 +665,4 @@ const install = (VueInstance) => {
   VueInstance.prototype.$teddy = output;
 };
 
-export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getTeddyStore, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddy, provideTeddyStore, remove, reset, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy, useTeddyStore };
+export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getTeddyStore, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddy, provideTeddyStore, remove, reset, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy, useTeddyStore };
