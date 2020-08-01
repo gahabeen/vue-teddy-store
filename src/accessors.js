@@ -85,21 +85,12 @@ export const teddyHas = makeHas({
   afterGetSteps,
 })
 
-export const teddyGet = (obj, path, context) => {
-  const _teddyGet = makeGet({
-    getProp,
-    hasProp,
-    afterGetSteps,
-  })
-
-  return memoize.get(obj, path, context, _teddyGet)
-}
-
-// export const teddyGet = makeGet({
-//   getProp,
-//   hasProp,
-//   afterGetSteps,
-// })
+export const teddyGet = makeGet({
+  getProp,
+  hasProp,
+  afterGetSteps,
+  proxy: memoize.get,
+})
 
 export const set = makeSet({
   setProp,
