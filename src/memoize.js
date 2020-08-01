@@ -1,4 +1,5 @@
 import getHash from 'object-hash'
+import stringify from 'fast-safe-stringify'
 
 // const unreactive = (obj) => {
 //   return Object.keys({ root: obj }).reduce((acc, key) => {
@@ -15,11 +16,11 @@ import getHash from 'object-hash'
 
 const cache = {}
 
-// NOTE: Might have some issues with Watchers. 
+// NOTE: Might have some issues with Watchers.
 
 export const get = (obj, path = '', context = {}, getter = () => null) => {
-  const hash = getHash(JSON.parse(JSON.stringify(obj)))
-  const contextHash = getHash(context)
+  const hash = getHash(JSON.parse(stringify(obj)))
+  const contextHash = getHash(JSON.parse(stringify(context)))
   const key = `${path}//${contextHash}`
   if (hash in cache && cache[hash].has(key)) {
     // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
