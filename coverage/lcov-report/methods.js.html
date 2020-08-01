@@ -22,30 +22,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">86.47% </span>
+                <span class="strong">86.73% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>179/207</span>
+                <span class='fraction'>183/211</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">74.11% </span>
+                <span class="strong">75.21% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>83/112</span>
+                <span class='fraction'>88/117</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.57% </span>
+                <span class="strong">79.31% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>44/56</span>
+                <span class='fraction'>46/58</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.05% </span>
+                <span class="strong">87.31% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>168/193</span>
+                <span class='fraction'>172/197</span>
             </div>
         
             
@@ -447,7 +447,14 @@
 <a name='L389'></a><a href='#L389'>389</a>
 <a name='L390'></a><a href='#L390'>390</a>
 <a name='L391'></a><a href='#L391'>391</a>
-<a name='L392'></a><a href='#L392'>392</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L392'></a><a href='#L392'>392</a>
+<a name='L393'></a><a href='#L393'>393</a>
+<a name='L394'></a><a href='#L394'>394</a>
+<a name='L395'></a><a href='#L395'>395</a>
+<a name='L396'></a><a href='#L396'>396</a>
+<a name='L397'></a><a href='#L397'>397</a>
+<a name='L398'></a><a href='#L398'>398</a>
+<a name='L399'></a><a href='#L399'>399</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -515,7 +522,7 @@
 <span class="cline-any cline-yes">125x</span>
 <span class="cline-any cline-yes">125x</span>
 <span class="cline-any cline-yes">67x</span>
-<span class="cline-any cline-yes">65x</span>
+<span class="cline-any cline-yes">84x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -600,7 +607,14 @@
 <span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">10x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">12x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
@@ -989,22 +1003,29 @@ export const makeWatchers = (definition, watchers) =&gt; {
     // Watcher is an object definition with a .handler()
     else <span class="missing-if-branch" title="else path not taken" >E</span>if (watcher &amp;&amp; typeof watcher === 'object' &amp;&amp; 'handler' in watcher) {
       const { handler, path, paths = [], ...options } = watcher
+      // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
+      const wrapper = (fn) =&gt;
+        function(newState, oldState) {
+          if ((newState !== undefined &amp;&amp; oldState !== undefined) || newState !== oldState) {
+            fn.call(this, newState, oldState)
+          }
+        }
       // Contains a path
       if (typeof path === 'string') {
-        register(path, () =&gt; accessors.teddyGet(store, path), handler, { deep: true, ...options })
+        register(path, () =&gt; accessors.teddyGet(store, path), wrapper(handler), { deep: true, ...options })
       }
       // Contains paths
       else <span class="missing-if-branch" title="if path not taken" >I</span>if (paths.length &gt; 0) {
 <span class="cstat-no" title="statement not covered" >        register(</span>
           paths.map(<span class="fstat-no" title="function not covered" >(p</span>) =&gt; <span class="cstat-no" title="statement not covered" >utils.resolvePath([name, p]))</span>,
           paths.map(<span class="fstat-no" title="function not covered" >(p</span>) =&gt; <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >accessors.teddyGet(store, p))</span></span>,
-          handler,
+          wrapper(handler),
           { deep: true, ...options }
         )
       }
       // Global watcher
       else {
-        register(`state`, () =&gt; store.state, handler, { deep: true, ...options })
+        register(`state`, () =&gt; store.state, wrapper(handler), { deep: true, ...options })
       }
     }
     return list
@@ -1236,7 +1257,7 @@ export const computed = (definition) =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank">istanbul</a>
-                at Fri Jul 31 2020 19:58:52 GMT+0200 (GMT+02:00)
+                at Sat Aug 01 2020 12:32:19 GMT+0200 (GMT+02:00)
             </div>
         </div>
         <script src="prettify.js"></script>

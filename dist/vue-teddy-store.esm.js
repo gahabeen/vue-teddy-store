@@ -1,10 +1,11 @@
 /*!
-  * vue-teddy-store v0.2.34
+  * vue-teddy-store v0.2.35
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
 import VueCompositionMethods__default, { reactive, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, isValidKey } from 'object-string-path';
+import getHash from 'object-hash';
 import Vue from 'vue';
 
 const prefix = (space, name) => `teddy:${space}:${name}`;
@@ -112,6 +113,39 @@ function resolvePath(arr) {
     .join('.')
 }
 
+// const unreactive = (obj) => {
+//   return Object.keys({ root: obj }).reduce((acc, key) => {
+//     if (Array.isArray(obj[key])) {
+//       acc[key] = [...obj[key].map(unreactive)]
+//     } else if (isObject(obj[key])) {
+//       acc[key] = unreactive({ ...obj[key] })
+//     } else {
+//       acc[key] = obj[key]
+//     }
+//     return acc
+//   }).root
+// }
+
+const cache$1 = {};
+
+// NOTE: Might have some issues with Watchers. 
+
+const get = (obj, path = '', context = {}, getter = () => null) => {
+  const hash = getHash(JSON.parse(JSON.stringify(obj)));
+  const contextHash = getHash(context);
+  const key = `${path}//${contextHash}`;
+  if (hash in cache$1 && cache$1[hash].has(key)) {
+    // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
+    return cache$1[hash].get(key)
+  } else {
+    if (!(hash in cache$1)) cache$1[hash] = new Map();
+    const value = getter(obj, path, context);
+    cache$1[hash].set(key, value);
+    // console.info(`Set in cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
+    return value
+  }
+};
+
 function setProp(obj, key, value) {
   if (isValidKey(key) && (isObject(obj) || Array.isArray(obj))) {
     if (isComputed(obj) && 'value' in obj && key in obj.value) {
@@ -195,11 +229,21 @@ const teddyHas = makeHas({
   afterGetSteps,
 });
 
-const teddyGet = makeGet({
-  getProp,
-  hasProp,
-  afterGetSteps,
-});
+const teddyGet = (obj, path, context) => {
+  const _teddyGet = makeGet({
+    getProp,
+    hasProp,
+    afterGetSteps,
+  });
+
+  return get(obj, path, context, _teddyGet)
+};
+
+// export const teddyGet = makeGet({
+//   getProp,
+//   hasProp,
+//   afterGetSteps,
+// })
 
 const set = makeSet({
   setProp,
@@ -212,7 +256,7 @@ const has = makeHas({
   hasProp,
 });
 
-const get = makeGet({
+const get$1 = makeGet({
   getProp,
   hasProp,
 });
@@ -224,7 +268,7 @@ var accessors = /*#__PURE__*/Object.freeze({
   teddyGet: teddyGet,
   set: set,
   has: has,
-  get: get
+  get: get$1
 });
 
 Vue.use(VueCompositionMethods__default);
@@ -395,22 +439,29 @@ const makeWatchers = (definition, watchers) => {
     // Watcher is an object definition with a .handler()
     else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
       const { handler, path, paths = [], ...options } = watcher;
+      // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
+      const wrapper = (fn) =>
+        function(newState, oldState) {
+          if ((newState !== undefined && oldState !== undefined) || newState !== oldState) {
+            fn.call(this, newState, oldState);
+          }
+        };
       // Contains a path
       if (typeof path === 'string') {
-        register(path, () => teddyGet(store, path), handler, { deep: true, ...options });
+        register(path, () => teddyGet(store, path), wrapper(handler), { deep: true, ...options });
       }
       // Contains paths
       else if (paths.length > 0) {
         register(
           paths.map((p) => resolvePath([name, p])),
           paths.map((p) => () => teddyGet(store, p)),
-          handler,
+          wrapper(handler),
           { deep: true, ...options }
         );
       }
       // Global watcher
       else {
-        register(`state`, () => store.state, handler, { deep: true, ...options });
+        register(`state`, () => store.state, wrapper(handler), { deep: true, ...options });
       }
     }
     return list
@@ -466,14 +517,14 @@ const has$1 = (definition, path, context) => {
   return teddyHas(store, path, context)
 };
 
-const get$1 = (definition, path, context, orValue) => {
+const get$2 = (definition, path, context, orValue) => {
   const store = getStore(definition);
   return teddyGet(store, path, context) || orValue
 };
 
 const getter = (definition, path, context, orValue) => {
   return function() {
-    return get$1(definition, path, context || this, orValue)
+    return get$2(definition, path, context || this, orValue)
   }
 };
 
@@ -551,7 +602,7 @@ const mapMethods = (mapper = (fn) => fn) => {
     reset: mapper(reset),
     run: mapper(run),
     has: mapper(has$1),
-    get: mapper(get$1),
+    get: mapper(get$2),
     getter: mapper(getter),
     set: mapper(set$1),
     setter: mapper(setter),
@@ -658,7 +709,7 @@ var output = /*#__PURE__*/Object.freeze({
   reset: reset,
   run: run,
   has: has$1,
-  get: get$1,
+  get: get$2,
   getter: getter,
   set: set$1,
   setter: setter,
@@ -679,4 +730,4 @@ const install = (VueInstance) => {
   VueInstance.prototype.$teddy = output;
 };
 
-export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, remove, reset, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy };
+export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$2 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, remove, reset, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy };
