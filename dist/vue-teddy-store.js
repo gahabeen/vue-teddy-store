@@ -116,37 +116,36 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       .join('.')
   }
 
-  // const unreactive = (obj) => {
-  //   return Object.keys({ root: obj }).reduce((acc, key) => {
-  //     if (Array.isArray(obj[key])) {
-  //       acc[key] = [...obj[key].map(unreactive)]
-  //     } else if (isObject(obj[key])) {
-  //       acc[key] = unreactive({ ...obj[key] })
-  //     } else {
-  //       acc[key] = obj[key]
-  //     }
-  //     return acc
-  //   }).root
-  // }
-
   const cache$1 = {};
 
   // NOTE: Might have some issues with Watchers.
 
-  const get = (obj, path = '', context = {}, getter = () => null) => {
+  const getDecorated = (obj, steps = [], context = {}, resolvedContext = {}, getter = () => null) => {
+    const path = steps.join('.');
     const hash = getHash(JSON.parse(stringify(obj)));
-    const contextHash = getHash(JSON.parse(stringify(context)));
+    const contextHash = getHash(JSON.parse(stringify(resolvedContext)));
     const key = `${path}//${contextHash}`;
     if (hash in cache$1 && cache$1[hash].has(key)) {
       // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
-      return cache$1[hash].get(key)
+      return {
+        cache: true,
+        value: cache$1[hash].get(key),
+      }
     } else {
       if (!(hash in cache$1)) cache$1[hash] = new Map();
       const value = getter(obj, path, context);
       cache$1[hash].set(key, value);
       // console.info(`Set in cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
-      return value
+      return {
+        cache: false,
+        value,
+      }
     }
+  };
+
+  const get = (obj, steps = [], context = {}, resolvedContext = {}, getter = () => null) => {
+    const { value } = getDecorated(obj, steps, context, resolvedContext, getter);
+    return value
   };
 
   function setProp(obj, key, value) {
@@ -232,21 +231,12 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     afterGetSteps,
   });
 
-  const teddyGet = (obj, path, context) => {
-    const _teddyGet = objectStringPath.makeGet({
-      getProp,
-      hasProp,
-      afterGetSteps,
-    });
-
-    return get(obj, path, context, _teddyGet)
-  };
-
-  // export const teddyGet = makeGet({
-  //   getProp,
-  //   hasProp,
-  //   afterGetSteps,
-  // })
+  const teddyGet = objectStringPath.makeGet({
+    getProp,
+    hasProp,
+    afterGetSteps,
+    proxy: get,
+  });
 
   const set = objectStringPath.makeSet({
     setProp,

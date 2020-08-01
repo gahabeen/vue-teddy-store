@@ -22,30 +22,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.31% </span>
+                <span class="strong">88.89% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>12/13</span>
+                <span class='fraction'>16/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">77.78% </span>
+                <span class="strong">35.71% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/9</span>
+                <span class='fraction'>5/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">50% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/2</span>
+                <span class='fraction'>2/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>11/11</span>
+                <span class='fraction'>15/15</span>
             </div>
         
             
@@ -90,76 +90,73 @@
 <a name='L32'></a><a href='#L32'>32</a>
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
-<a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L35'></a><a href='#L35'>35</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-yes">19x</span>
-<span class="cline-any cline-yes">19x</span>
-<span class="cline-any cline-yes">19x</span>
-<span class="cline-any cline-yes">19x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
-<span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import getHash from 'object-hash'
 import stringify from 'fast-safe-stringify'
-&nbsp;
-// const unreactive = (obj) =&gt; {
-//   return Object.keys({ root: obj }).reduce((acc, key) =&gt; {
-//     if (Array.isArray(obj[key])) {
-//       acc[key] = [...obj[key].map(unreactive)]
-//     } else if (isObject(obj[key])) {
-//       acc[key] = unreactive({ ...obj[key] })
-//     } else {
-//       acc[key] = obj[key]
-//     }
-//     return acc
-//   }).root
-// }
 &nbsp;
 const cache = {}
 &nbsp;
 // NOTE: Might have some issues with Watchers.
 &nbsp;
-export const get = (obj, path = <span class="branch-0 cbranch-no" title="branch not covered" >'',</span> context = {}, getter = <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >null)</span></span> =&gt; {
+export const getDecorated = (obj, steps = <span class="branch-0 cbranch-no" title="branch not covered" >[],</span> context = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> resolvedContext = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> getter = <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >null)</span></span> =&gt; {
+  const path = steps.join('.')
   const hash = getHash(JSON.parse(stringify(obj)))
-  const contextHash = getHash(JSON.parse(stringify(context)))
+  const contextHash = getHash(JSON.parse(stringify(resolvedContext)))
   const key = `${path}//${contextHash}`
   if (hash in cache &amp;&amp; cache[hash].has(key)) {
     // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
-    return cache[hash].get(key)
+    return {
+      cache: true,
+      value: cache[hash].get(key),
+    }
   } else {
-    if (!(hash in cache)) cache[hash] = new Map()
+    <span class="missing-if-branch" title="else path not taken" >E</span>if (!(hash in cache)) cache[hash] = new Map()
     const value = getter(obj, path, context)
     cache[hash].set(key, value)
     // console.info(`Set in cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
-    return value
+    return {
+      cache: false,
+      value,
+    }
   }
+}
+&nbsp;
+export const get = (obj, steps = <span class="branch-0 cbranch-no" title="branch not covered" >[],</span> context = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> resolvedContext = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> getter = <span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >null)</span></span> =&gt; {
+  const { value } = getDecorated(obj, steps, context, resolvedContext, getter)
+  return value
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -168,7 +165,7 @@ export const get = (obj, path = <span class="branch-0 cbranch-no" title="branch 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank">istanbul</a>
-                at Sat Aug 01 2020 13:08:58 GMT+0200 (GMT+02:00)
+                at Sat Aug 01 2020 22:32:14 GMT+0200 (GMT+02:00)
             </div>
         </div>
         <script src="prettify.js"></script>
