@@ -1,5 +1,6 @@
 import { isObject, isValidKey, makeGet, makeHas, makeSet } from 'object-string-path'
 import { isComputed } from './utils'
+import * as memoize from './memoize'
 
 function setProp(obj, key, value) {
   if (isValidKey(key) && (isObject(obj) || Array.isArray(obj))) {
@@ -84,11 +85,21 @@ export const teddyHas = makeHas({
   afterGetSteps,
 })
 
-export const teddyGet = makeGet({
-  getProp,
-  hasProp,
-  afterGetSteps,
-})
+export const teddyGet = (obj, path, context) => {
+  const _teddyGet = makeGet({
+    getProp,
+    hasProp,
+    afterGetSteps,
+  })
+
+  return memoize.get(obj, path, context, _teddyGet)
+}
+
+// export const teddyGet = makeGet({
+//   getProp,
+//   hasProp,
+//   afterGetSteps,
+// })
 
 export const set = makeSet({
   setProp,

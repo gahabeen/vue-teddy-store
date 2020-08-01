@@ -149,22 +149,29 @@ export const makeWatchers = (definition, watchers) => {
     // Watcher is an object definition with a .handler()
     else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
       const { handler, path, paths = [], ...options } = watcher
+      // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
+      const wrapper = (fn) =>
+        function(newState, oldState) {
+          if ((newState !== undefined && oldState !== undefined) || newState !== oldState) {
+            fn.call(this, newState, oldState)
+          }
+        }
       // Contains a path
       if (typeof path === 'string') {
-        register(path, () => accessors.teddyGet(store, path), handler, { deep: true, ...options })
+        register(path, () => accessors.teddyGet(store, path), wrapper(handler), { deep: true, ...options })
       }
       // Contains paths
       else if (paths.length > 0) {
         register(
           paths.map((p) => utils.resolvePath([name, p])),
           paths.map((p) => () => accessors.teddyGet(store, p)),
-          handler,
+          wrapper(handler),
           { deep: true, ...options }
         )
       }
       // Global watcher
       else {
-        register(`state`, () => store.state, handler, { deep: true, ...options })
+        register(`state`, () => store.state, wrapper(handler), { deep: true, ...options })
       }
     }
     return list

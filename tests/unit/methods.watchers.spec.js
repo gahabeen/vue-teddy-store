@@ -54,25 +54,37 @@ describe('methods - watchers', () => {
     const space = nanoid()
     const name = nanoid()
 
-    const store = setStore({ space, name }, {
-      state: {
-        someKey: true,
-      },
-    })
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          someKey: true,
+        },
+      }
+    )
 
     let hit = 0
     makeWatchers({ space, name }, [
       {
         path: 'someKey',
-        handler: () => (hit = hit + 1),
+        handler: (newState, oldState) => {
+          console.log('someKey 1', newState, oldState)
+          hit = hit + 1
+        },
       },
       {
         path: 'someKey',
-        handler: () => (hit = hit + 1),
+        handler: (newState, oldState) => {
+          console.log('someKey 2', newState, oldState)
+          hit = hit + 1
+        },
       },
       {
         path: 'otherKey',
-        handler: () => (hit = hit + 1),
+        handler: (newState, oldState) => {
+          console.log('otherKey', newState, oldState)
+          hit = hit + 1
+        },
       },
     ])
     store.state.someKey = false
