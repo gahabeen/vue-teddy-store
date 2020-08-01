@@ -1,13 +1,14 @@
 /*!
-  * vue-teddy-store v0.2.35
+  * vue-teddy-store v0.2.36
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, getHash, Vue) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, getHash, stringify, Vue) {
   'use strict';
 
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
   getHash = getHash && Object.prototype.hasOwnProperty.call(getHash, 'default') ? getHash['default'] : getHash;
+  stringify = stringify && Object.prototype.hasOwnProperty.call(stringify, 'default') ? stringify['default'] : stringify;
   Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
 
   const prefix = (space, name) => `teddy:${space}:${name}`;
@@ -130,11 +131,11 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   const cache$1 = {};
 
-  // NOTE: Might have some issues with Watchers. 
+  // NOTE: Might have some issues with Watchers.
 
   const get = (obj, path = '', context = {}, getter = () => null) => {
-    const hash = getHash(JSON.parse(JSON.stringify(obj)));
-    const contextHash = getHash(context);
+    const hash = getHash(JSON.parse(stringify(obj)));
+    const contextHash = getHash(JSON.parse(stringify(context)));
     const key = `${path}//${contextHash}`;
     if (hash in cache$1 && cache$1[hash].has(key)) {
       // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
@@ -771,4 +772,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath, getHash, Vue));
+}({}, vueCompositionApi, objectStringPath, getHash, stringify, Vue));

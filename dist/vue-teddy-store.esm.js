@@ -1,11 +1,12 @@
 /*!
-  * vue-teddy-store v0.2.35
+  * vue-teddy-store v0.2.36
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
 import VueCompositionMethods__default, { reactive, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, isValidKey } from 'object-string-path';
 import getHash from 'object-hash';
+import stringify from 'fast-safe-stringify';
 import Vue from 'vue';
 
 const prefix = (space, name) => `teddy:${space}:${name}`;
@@ -128,11 +129,11 @@ function resolvePath(arr) {
 
 const cache$1 = {};
 
-// NOTE: Might have some issues with Watchers. 
+// NOTE: Might have some issues with Watchers.
 
 const get = (obj, path = '', context = {}, getter = () => null) => {
-  const hash = getHash(JSON.parse(JSON.stringify(obj)));
-  const contextHash = getHash(context);
+  const hash = getHash(JSON.parse(stringify(obj)));
+  const contextHash = getHash(JSON.parse(stringify(context)));
   const key = `${path}//${contextHash}`;
   if (hash in cache$1 && cache$1[hash].has(key)) {
     // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
