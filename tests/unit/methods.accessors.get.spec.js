@@ -108,7 +108,7 @@ describe('methods - accessors - get', () => {
     })
 
     await flushPromises()
-    expect(get({ space, name }, `products[id=1]`)).toBe(store.state.products[0])
+    expect(get({ space, name }, `products[id=1]`)).toEqual(store.state.products[0])
   })
 
   it('get() should access a path with key/value within an array via a variable (with brackets)', async () => {

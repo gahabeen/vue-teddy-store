@@ -1,6 +1,6 @@
-import { setStore, useStore, install, has } from '@/index'
-import { createLocalVue, mount } from '@vue/test-utils'
+import { install, setStore, useStore } from '@/index'
 import VueCompositionApi from '@vue/composition-api'
+import { createLocalVue, mount } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
 import Vue from 'vue'
@@ -61,9 +61,6 @@ describe('use cases - ', () => {
         },
       }
     )
-
-    console.log(has(`${space}.${name}`, 'products.0.name'))
-    // console.log(has({ space, name }, 'products.0.name'))
 
     const wrapper = mount(
       {

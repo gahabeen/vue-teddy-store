@@ -68,21 +68,18 @@ describe('methods - watchers', () => {
       {
         path: 'someKey',
         handler: (newState, oldState) => {
-          console.log('someKey 1', newState, oldState)
           hit = hit + 1
         },
       },
       {
         path: 'someKey',
         handler: (newState, oldState) => {
-          console.log('someKey 2', newState, oldState)
           hit = hit + 1
         },
       },
       {
         path: 'otherKey',
         handler: (newState, oldState) => {
-          console.log('otherKey', newState, oldState)
           hit = hit + 1
         },
       },

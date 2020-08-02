@@ -117,7 +117,7 @@ export const setActions = (definition, actions) => {
 }
 
 export const makeWatchers = (definition, watchers) => {
-  const { name } = parseDefinition(definition)
+  const { space, name } = parseDefinition(definition)
   const store = getStore(definition)
 
   const _watchers = []
@@ -157,13 +157,13 @@ export const makeWatchers = (definition, watchers) => {
         }
       // Contains a path
       if (typeof path === 'string') {
-        register(path, () => accessors.teddyGet(store, path), wrapper(handler), { deep: true, ...options })
+        register(path, () => accessors.teddyGet(space, name)(store, path), wrapper(handler), { deep: true, ...options })
       }
       // Contains paths
       else if (paths.length > 0) {
         register(
           paths.map((p) => utils.resolvePath([name, p])),
-          paths.map((p) => () => accessors.teddyGet(store, p)),
+          paths.map((p) => () => accessors.teddyGet(space, name)(store, p)),
           wrapper(handler),
           { deep: true, ...options }
         )
@@ -192,11 +192,11 @@ export const exists = (definition) => {
   }
 }
 
-export const remove = (definition) => {
-  const { space, name } = parseDefinition(definition)
-  const teddy = getTeddy(space)
-  if (name in teddy.stores) delete teddy.stores[name]
-}
+// export const remove = (definition) => {
+//   const { space, name } = parseDefinition(definition)
+//   const teddy = getTeddy(space)
+//   if (name in teddy.stores) delete teddy.stores[name]
+// }
 
 // eslint-disable-next-line no-unused-vars
 export const reset = (definition) => {
@@ -221,14 +221,21 @@ export const run = (definition, actionName, ...args) => {
   }
 }
 
+export const remove = (definition, path, context) => {
+  const { space, name } = parseDefinition(definition)
+  const store = getStore({ space, name })
+  return accessors.teddyRemove(space, name)(store, path, context)
+}
+
 export const has = (definition, path, context) => {
   const store = getStore(definition)
   return accessors.teddyHas(store, path, context)
 }
 
 export const get = (definition, path, context, orValue) => {
-  const store = getStore(definition)
-  return accessors.teddyGet(store, path, context) || orValue
+  const { space, name } = parseDefinition(definition)
+  const store = getStore({ space, name })
+  return accessors.teddyGet(space, name)(store, path, context) || orValue
 }
 
 export const getter = (definition, path, context, orValue) => {
@@ -307,9 +314,9 @@ export const mapMethods = (mapper = (fn) => fn) => {
     makeWatchers: mapper(makeWatchers),
     setWatchers: mapper(setWatchers),
     exists: mapper(exists),
-    remove: mapper(remove),
     reset: mapper(reset),
     run: mapper(run),
+    remove: mapper(remove),
     has: mapper(has),
     get: mapper(get),
     getter: mapper(getter),

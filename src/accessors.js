@@ -1,5 +1,6 @@
-import { isObject, isValidKey, makeGet, makeHas, makeSet } from 'object-string-path'
-import { isComputed } from './utils'
+import { isRef, unref } from '@vue/composition-api'
+import { isObject, isValidKey, makeGet, makeHas, makeSet, makeRemove } from 'object-string-path'
+import { isComputed, omit } from './utils'
 import * as memoize from './memoize'
 
 function setProp(obj, key, value) {
@@ -68,8 +69,36 @@ function hasProp(obj, key) {
   }
 }
 
+function removeProp(_, parent, parentPath, key) {
+  const parentValue = unref(parent)
+  const parentIsRef = isRef(parent)
+  if (Array.isArray(parentValue)) {
+    if (parentIsRef) {
+      parent.value.splice(+key, 1)
+    } else {
+      parent.splice(+key, 1)
+    }
+    return true
+  } else if (isObject(parentValue)) {
+    if (parentIsRef) {
+      parent.value = omit(parent.value, [key])
+    } else {
+      delete parent[key]
+    }
+    if (parentPath.length > 0) {
+      // important for Vue reactivity after key deleted
+      // teddySet(obj, parentPath, { ...(parentIsRef ? parent.value : parent) }, context)
+    }
+    return true
+  } else {
+    // nothing can be done?
+    // Handle more types
+    return false
+  }
+}
+
 function afterGetSteps(steps = []) {
-  return ['_state', ...steps]
+  return steps[0] !== '_state' ? ['_state', ...steps] : steps
 }
 
 export const teddySet = makeSet({
@@ -85,12 +114,22 @@ export const teddyHas = makeHas({
   afterGetSteps,
 })
 
-export const teddyGet = makeGet({
-  getProp,
-  hasProp,
-  afterGetSteps,
-  proxy: memoize.get,
-})
+export const teddyGet = (space, name) =>
+  makeGet({
+    getProp,
+    hasProp,
+    afterGetSteps,
+    proxy: memoize.get(space, name),
+  })
+
+export const teddyRemove = (space, name) =>
+  makeRemove({
+    get: teddyGet(space, name),
+    getProp,
+    hasProp,
+    removeProp,
+    afterGetSteps,
+  })
 
 export const set = makeSet({
   setProp,
@@ -104,6 +143,12 @@ export const has = makeHas({
 })
 
 export const get = makeGet({
+  getProp,
+  hasProp,
+})
+
+export const remove = makeRemove({
+  get,
   getProp,
   hasProp,
 })
