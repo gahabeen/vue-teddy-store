@@ -28,7 +28,6 @@ const parseDefinition = (definition) => {
       _space = DEFAULT_SPACE_NAME
       _name = definition
     }
-    console.log('parseDefinition', definition, { space: _space, name: _name })
   }
 
   if (typeof _space === 'string') {

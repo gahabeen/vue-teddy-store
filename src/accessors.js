@@ -25,7 +25,7 @@ function setProp(obj, key, value) {
     }
     return obj
   } else {
-    console.log(`Couldn't not set ${key}`)
+    console.warn(`Couldn't not set ${key}`)
     return
   }
 }
