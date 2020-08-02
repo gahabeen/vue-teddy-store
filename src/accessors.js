@@ -119,7 +119,7 @@ export const teddyGet = (space, name) =>
     getProp,
     hasProp,
     afterGetSteps,
-    proxy: memoize.get(space, name),
+    // proxy: memoize.get(space, name),
   })
 
 export const teddyRemove = (space, name) =>
