@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.37
+  * vue-teddy-store v0.2.38
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -109,6 +109,15 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   }
 
+  function omit(obj, keys = []) {
+    return Object.keys(obj).reduce((acc, key) => {
+      if (!keys.includes(key)) {
+        acc[key] = obj[key];
+      }
+      return acc
+    }, {})
+  }
+
   function resolvePath(arr) {
     return arr
       .filter(Boolean)
@@ -120,31 +129,33 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   // NOTE: Might have some issues with Watchers.
 
-  const getDecorated = (obj, steps = [], context = {}, resolvedContext = {}, getter = () => null) => {
-    const path = steps.join('.');
-    const hash = getHash(JSON.parse(stringify(obj)));
-    const contextHash = getHash(JSON.parse(stringify(resolvedContext)));
-    const key = `${path}//${contextHash}`;
-    if (hash in cache$1 && cache$1[hash].has(key)) {
-      // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
-      return {
-        cache: true,
-        value: cache$1[hash].get(key),
-      }
-    } else {
-      if (!(hash in cache$1)) cache$1[hash] = new Map();
-      const value = getter(obj, path, context);
-      cache$1[hash].set(key, value);
-      // console.info(`Set in cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
-      return {
-        cache: false,
-        value,
+  const getDecorated = (space, name) => {
+    return (obj, steps = [], context = {}, resolvedContext = {}, getter = () => null) => {
+      const path = steps.join('.');
+      const hash = getHash(JSON.parse(stringify(obj, VueCompositionMethods.unref)));
+      const contextHash = getHash(JSON.parse(stringify(resolvedContext, VueCompositionMethods.unref)));
+      const key = `${space}/${name}//${path}//${contextHash}`;
+      if (hash in cache$1 && cache$1[hash].has(key)) {
+        // console.info(`Retrieved from cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
+        return {
+          cache: true,
+          value: cache$1[hash].get(key),
+        }
+      } else {
+        if (!(hash in cache$1)) cache$1[hash] = new Map();
+        const value = getter(obj, steps, context);
+        cache$1[hash].set(key, value);
+        // console.info(`Set in cache, path: '${path}' on object's hash: '${hash}' with context's hash: '${contextHash}'`)
+        return {
+          cache: false,
+          value,
+        }
       }
     }
   };
 
-  const get = (obj, steps = [], context = {}, resolvedContext = {}, getter = () => null) => {
-    const { value } = getDecorated(obj, steps, context, resolvedContext, getter);
+  const get = (space, name) => (obj, steps = [], context = {}, resolvedContext = {}, getter = () => null) => {
+    const { value } = getDecorated(space, name)(obj, steps, context, resolvedContext, getter);
     return value
   };
 
@@ -214,8 +225,33 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   }
 
+  function removeProp(_, parent, parentPath, key) {
+    const parentValue = VueCompositionMethods.unref(parent);
+    const parentIsRef = VueCompositionMethods.isRef(parent);
+    if (Array.isArray(parentValue)) {
+      if (parentIsRef) {
+        parent.value.splice(+key, 1);
+      } else {
+        parent.splice(+key, 1);
+      }
+      return true
+    } else if (objectStringPath.isObject(parentValue)) {
+      if (parentIsRef) {
+        parent.value = omit(parent.value, [key]);
+      } else {
+        delete parent[key];
+      }
+      if (parentPath.length > 0) ;
+      return true
+    } else {
+      // nothing can be done?
+      // Handle more types
+      return false
+    }
+  }
+
   function afterGetSteps(steps = []) {
-    return ['_state', ...steps]
+    return steps[0] !== '_state' ? ['_state', ...steps] : steps
   }
 
   const teddySet = objectStringPath.makeSet({
@@ -231,12 +267,22 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     afterGetSteps,
   });
 
-  const teddyGet = objectStringPath.makeGet({
-    getProp,
-    hasProp,
-    afterGetSteps,
-    proxy: get,
-  });
+  const teddyGet = (space, name) =>
+    objectStringPath.makeGet({
+      getProp,
+      hasProp,
+      afterGetSteps,
+      proxy: get(space, name),
+    });
+
+  const teddyRemove = (space, name) =>
+    objectStringPath.makeRemove({
+      get: teddyGet(space, name),
+      getProp,
+      hasProp,
+      removeProp,
+      afterGetSteps,
+    });
 
   const set = objectStringPath.makeSet({
     setProp,
@@ -254,14 +300,22 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     hasProp,
   });
 
+  const remove = objectStringPath.makeRemove({
+    get: get$1,
+    getProp,
+    hasProp,
+  });
+
   var accessors = /*#__PURE__*/Object.freeze({
     __proto__: null,
     teddySet: teddySet,
     teddyHas: teddyHas,
     teddyGet: teddyGet,
+    teddyRemove: teddyRemove,
     set: set,
     has: has,
-    get: get$1
+    get: get$1,
+    remove: remove
   });
 
   Vue.use(VueCompositionMethods__default);
@@ -400,7 +454,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   };
 
   const makeWatchers = (definition, watchers) => {
-    const { name } = parseDefinition(definition);
+    const { space, name } = parseDefinition(definition);
     const store = getStore(definition);
 
     const _watchers = [];
@@ -440,13 +494,13 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
           };
         // Contains a path
         if (typeof path === 'string') {
-          register(path, () => teddyGet(store, path), wrapper(handler), { deep: true, ...options });
+          register(path, () => teddyGet(space, name)(store, path), wrapper(handler), { deep: true, ...options });
         }
         // Contains paths
         else if (paths.length > 0) {
           register(
             paths.map((p) => resolvePath([name, p])),
-            paths.map((p) => () => teddyGet(store, p)),
+            paths.map((p) => () => teddyGet(space, name)(store, p)),
             wrapper(handler),
             { deep: true, ...options }
           );
@@ -475,11 +529,11 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   };
 
-  const remove = (definition) => {
-    const { space, name } = parseDefinition(definition);
-    const teddy = getTeddy(space);
-    if (name in teddy.stores) delete teddy.stores[name];
-  };
+  // export const remove = (definition) => {
+  //   const { space, name } = parseDefinition(definition)
+  //   const teddy = getTeddy(space)
+  //   if (name in teddy.stores) delete teddy.stores[name]
+  // }
 
   // eslint-disable-next-line no-unused-vars
   const reset = (definition) => {
@@ -504,14 +558,21 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   };
 
+  const remove$1 = (definition, path, context) => {
+    const { space, name } = parseDefinition(definition);
+    const store = getStore({ space, name });
+    return teddyRemove(space, name)(store, path, context)
+  };
+
   const has$1 = (definition, path, context) => {
     const store = getStore(definition);
     return teddyHas(store, path, context)
   };
 
   const get$2 = (definition, path, context, orValue) => {
-    const store = getStore(definition);
-    return teddyGet(store, path, context) || orValue
+    const { space, name } = parseDefinition(definition);
+    const store = getStore({ space, name });
+    return teddyGet(space, name)(store, path, context) || orValue
   };
 
   const getter = (definition, path, context, orValue) => {
@@ -590,9 +651,9 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       makeWatchers: mapper(makeWatchers),
       setWatchers: mapper(setWatchers),
       exists: mapper(exists),
-      remove: mapper(remove),
       reset: mapper(reset),
       run: mapper(run),
+      remove: mapper(remove$1),
       has: mapper(has$1),
       get: mapper(get$2),
       getter: mapper(getter),
@@ -697,9 +758,9 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     makeWatchers: makeWatchers,
     setWatchers: setWatchers,
     exists: exists,
-    remove: remove,
     reset: reset,
     run: run,
+    remove: remove$1,
     has: has$1,
     get: get$2,
     getter: getter,
@@ -744,7 +805,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   exports.makeWatchers = makeWatchers;
   exports.mapMethods = mapMethods;
   exports.provideTeddyStore = provideTeddyStore;
-  exports.remove = remove;
+  exports.remove = remove$1;
   exports.reset = reset;
   exports.run = run;
   exports.set = set$1;
