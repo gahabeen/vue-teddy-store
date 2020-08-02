@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.36
+  * vue-teddy-store v0.2.37
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -169,7 +169,7 @@ function setProp(obj, key, value) {
     }
     return obj
   } else {
-    console.log(`Couldn't not set ${key}`);
+    console.warn(`Couldn't not set ${key}`);
     return
   }
 }
@@ -309,7 +309,6 @@ const parseDefinition = (definition) => {
       _space = DEFAULT_SPACE_NAME;
       _name = definition;
     }
-    console.log('parseDefinition', definition, { space: _space, name: _name });
   }
 
   if (typeof _space === 'string') {

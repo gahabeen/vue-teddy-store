@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.36
+  * vue-teddy-store v0.2.37
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -171,7 +171,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       }
       return obj
     } else {
-      console.log(`Couldn't not set ${key}`);
+      console.warn(`Couldn't not set ${key}`);
       return
     }
   }
@@ -311,7 +311,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
         _space = DEFAULT_SPACE_NAME;
         _name = definition;
       }
-      console.log('parseDefinition', definition, { space: _space, name: _name });
     }
 
     if (typeof _space === 'string') {
