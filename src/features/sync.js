@@ -13,7 +13,7 @@ export default {
     /* istanbul ignore next */
     if (window) {
       window.addEventListener('storage', (e) => {
-        if (e.key === prefix(name)) {
+        if (e.key === prefix(space, name)) {
           store.state = { ...store.state, ...JSON.parse(e.newValue) }
         }
       })
