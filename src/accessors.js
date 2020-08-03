@@ -1,55 +1,46 @@
-import { isRef, unref } from '@vue/composition-api'
+import { isRef, unref, set as vueCompSet } from '@vue/composition-api'
 import { isObject, isValidKey, makeGet, makeHas, makeSet, makeRemove } from 'object-string-path'
 import { isComputed, omit } from './utils'
-import * as memoize from './memoize'
+// import * as memoize from './memoize'
 
 function setProp(obj, key, value) {
-  if (isValidKey(key) && (isObject(obj) || Array.isArray(obj))) {
-    if (isComputed(obj) && 'value' in obj && key in obj.value) {
-      obj.value[key] = value
-      return obj.value[key]
-    } else if (Array.isArray(obj)) {
-      obj.splice(+key, 1, value)
-      // obj[key] = value;
-      return obj[key]
-    } else if (isObject(obj)) {
-      obj[key] = value
-      return obj[key]
-    }
-  } else if (obj && key == undefined) {
-    if (isComputed(obj) && 'value' in obj) {
-      obj.value = value
-    } else if (isObject(value)) {
-      Object.assign(obj, value)
+  if (isObject(obj) || Array.isArray(obj)) {
+    if (isValidKey(key)) {
+      try {
+        vueCompSet(unref(obj), key, value)
+      } catch (error) {
+        console.error(`Couldn't not set value: ${{ obj, key, value }}`)
+      }
+      return unref(obj)[key]
     } else {
-      obj = value
+      if (isRef(obj)) {
+        obj.value = value
+      } else {
+        obj = value
+      }
     }
-    return obj
-  } else {
-    console.warn(`Couldn't not set ${key}`)
-    return
   }
 }
 
 function getProp(obj, key) {
-  if (isValidKey(key)) {
-    if (isComputed(obj)) {
-      if (key in obj.value) {
-        return obj.value[key]
+  if (isObject(obj) || Array.isArray(obj)) {
+    if (isValidKey(key)) {
+      if (isRef(obj)) {
+        if (key in obj.value) {
+          return obj.value[key]
+        } else {
+          return obj.value
+        }
       } else {
-        return obj.value
+        return obj[key]
       }
-    } else if (isObject(obj) || Array.isArray(obj)) {
-      return obj[key]
-    }
-  } else if (obj && key === undefined) {
-    if (isComputed(obj)) {
-      return obj.value
     } else {
-      return obj
+      if (isRef(obj)) {
+        return obj.value
+      } else {
+        return obj
+      }
     }
-  } else {
-    return // error
   }
 }
 
