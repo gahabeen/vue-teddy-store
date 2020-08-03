@@ -1,12 +1,10 @@
 /*!
-  * vue-teddy-store v0.2.40
+  * vue-teddy-store v0.2.41
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, unref, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+import VueCompositionMethods__default, { reactive, set as set$2, unref, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, isValidKey } from 'object-string-path';
-import 'object-hash';
-import 'fast-safe-stringify';
 import Vue from 'vue';
 
 const prefix = (space, name) => `teddy:${space}:${name}`;
@@ -81,7 +79,7 @@ var sync = {
     /* istanbul ignore next */
     if (window) {
       window.addEventListener('storage', (e) => {
-        if (e.key === prefix(name)) {
+        if (e.key === prefix(space, name)) {
           store.state = { ...store.state, ...JSON.parse(e.newValue) };
         }
       });
@@ -123,53 +121,46 @@ function resolvePath(arr) {
     .join('.')
 }
 
+// import * as memoize from './memoize'
+
 function setProp(obj, key, value) {
-  if (isValidKey(key) && (isObject(obj) || Array.isArray(obj))) {
-    if (isComputed(obj) && 'value' in obj && key in obj.value) {
-      obj.value[key] = value;
-      return obj.value[key]
-    } else if (Array.isArray(obj)) {
-      obj.splice(+key, 1, value);
-      // obj[key] = value;
-      return obj[key]
-    } else if (isObject(obj)) {
-      obj[key] = value;
-      return obj[key]
-    }
-  } else if (obj && key == undefined) {
-    if (isComputed(obj) && 'value' in obj) {
-      obj.value = value;
-    } else if (isObject(value)) {
-      Object.assign(obj, value);
+  if (isObject(obj) || Array.isArray(obj)) {
+    if (isValidKey(key)) {
+      try {
+        set$2(unref(obj), key, value);
+      } catch (error) {
+        console.error(`Couldn't not set value: ${{ obj, key, value }}`);
+      }
+      return unref(obj)[key]
     } else {
-      obj = value;
+      if (isRef(obj)) {
+        obj.value = value;
+      } else {
+        obj = value;
+      }
     }
-    return obj
-  } else {
-    console.warn(`Couldn't not set ${key}`);
-    return
   }
 }
 
 function getProp(obj, key) {
-  if (isValidKey(key)) {
-    if (isComputed(obj)) {
-      if (key in obj.value) {
-        return obj.value[key]
+  if (isObject(obj) || Array.isArray(obj)) {
+    if (isValidKey(key)) {
+      if (isRef(obj)) {
+        if (key in obj.value) {
+          return obj.value[key]
+        } else {
+          return obj.value
+        }
       } else {
-        return obj.value
+        return obj[key]
       }
-    } else if (isObject(obj) || Array.isArray(obj)) {
-      return obj[key]
-    }
-  } else if (obj && key === undefined) {
-    if (isComputed(obj)) {
-      return obj.value
     } else {
-      return obj
+      if (isRef(obj)) {
+        return obj.value
+      } else {
+        return obj
+      }
     }
-  } else {
-    return // error
   }
 }
 
