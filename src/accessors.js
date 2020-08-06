@@ -1,23 +1,29 @@
 import { isRef, unref } from '@vue/composition-api'
 import { isObject, isValidKey, makeGet, makeHas, makeSet, makeRemove } from 'object-string-path'
-import { isComputed, omit } from './utils'
+import { isComputed, isArray, omit, isValidArrayIndex } from './utils'
 // import * as memoize from './memoize'
 
 function setProp(obj, key, value) {
-  if (isObject(obj) || Array.isArray(obj)) {
-    if (isValidKey(key)) {
-      if (isRef(obj)) {
-        obj.value[key] = value
-      } else {
-        obj[key] = value
-      }
-      return unref(obj)[key]
+  const _obj = unref(obj)
+  const isRefed = isRef(obj)
+  if (isArray(_obj) && isValidArrayIndex(key)) {
+    _obj.length = Math.max(_obj.length, key)
+    if (isRefed) {
+      obj.value.splice(key, 1, value)
     } else {
-      if (isRef(obj)) {
-        obj.value = value
-      } else {
-        obj = value
-      }
+      obj.splice(key, 1, value)
+    }
+  } else if (isValidKey(key) && key in _obj && !(key in Object.prototype)) {
+    if (isRefed) {
+      obj.value[key] = value
+    } else {
+      obj[key] = value
+    }
+  } else {
+    if (isRefed) {
+      obj.value = value
+    } else {
+      obj = value
     }
   }
 }

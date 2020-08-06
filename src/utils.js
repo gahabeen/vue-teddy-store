@@ -48,3 +48,10 @@ export function resolvePath(arr) {
     .filter((item) => item.length > 0)
     .join('.')
 }
+
+export const isArray = Array.isArray
+
+export function isValidArrayIndex(val) {
+  const n = parseFloat(String(val))
+  return n >= 0 && Math.floor(n) === n && isFinite(val)
+}
