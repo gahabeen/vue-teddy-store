@@ -125,6 +125,26 @@ describe('methods - watchers', () => {
     expect(hit).toBe(1)
   })
 
+  it('setWatchers() should be debounced when several updates happen fast', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const store = getStore({ space, name })
+    let hit = 0
+    setWatchers({ space, name }, [
+      {
+        handler: () => (hit = hit + 1),
+        debounce: 400,
+      },
+    ])
+    store.state = { newKey: 'newValue' }
+    store.state = { newKey: 'newValue' }
+    store.state = { newKey: 'newValue' }
+    store.state = { newKey: 'newValue' }
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    expect(hit).toBe(1)
+  })
+
   /**
    * TODO:
    * - setWatchers()

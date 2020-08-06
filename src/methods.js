@@ -134,19 +134,25 @@ export const makeWatchers = (definition, watchers) => {
 
   return _watchers.reduce((list, watcher) => {
     // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
-    const wrapper = (fn) =>
-      function(newState, oldState) {
+    const wrapper = (fn, debounceDuration = null) => {
+      const wrapper = function(newState, oldState) {
         fn.call(this, newState, oldState, equal(newState, oldState))
       }
+      if (typeof debounceDuration === 'number') {
+        return utils.debounce(wrapper, debounceDuration)
+      } else {
+        return wrapper
+      }
+    }
 
     const signWatcher = (path = '', handler) => `${path}||${handler.toString()}`
-    const register = (path, watching, handler, options) => {
+    const register = (path, watching, handler, options = {}) => {
       list.push({
         path,
         signature: signWatcher(path, handler),
         options,
         start() {
-          this.unwatch = watch(watching, wrapper(handler), { deep: true, ...options })
+          this.unwatch = watch(watching, wrapper(handler, options.debounce), { deep: true, ...options })
           return this
         },
       })
