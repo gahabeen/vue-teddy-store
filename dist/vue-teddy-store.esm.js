@@ -1,9 +1,9 @@
 /*!
-  * vue-teddy-store v0.2.63
+  * vue-teddy-store v0.2.64
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, isRef, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+import VueCompositionMethods__default, { reactive, unref, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, isValidKey } from 'object-string-path';
 import Vue from 'vue';
 import equal from 'fast-deep-equal';
@@ -122,23 +122,36 @@ function resolvePath(arr) {
     .join('.')
 }
 
+const isArray = Array.isArray;
+
+function isValidArrayIndex(val) {
+  const n = parseFloat(String(val));
+  return n >= 0 && Math.floor(n) === n && isFinite(val)
+}
+
 // import * as memoize from './memoize'
 
 function setProp(obj, key, value) {
-  if (isObject(obj) || Array.isArray(obj)) {
-    if (isValidKey(key)) {
-      if (isRef(obj)) {
-        obj.value[key] = value;
-      } else {
-        obj[key] = value;
-      }
-      return unref(obj)[key]
+  const _obj = unref(obj);
+  const isRefed = isRef(obj);
+  if (isArray(_obj) && isValidArrayIndex(key)) {
+    _obj.length = Math.max(_obj.length, key);
+    if (isRefed) {
+      obj.value.splice(key, 1, value);
     } else {
-      if (isRef(obj)) {
-        obj.value = value;
-      } else {
-        obj = value;
-      }
+      obj.splice(key, 1, value);
+    }
+  } else if (isValidKey(key) && key in _obj && !(key in Object.prototype)) {
+    if (isRefed) {
+      obj.value[key] = value;
+    } else {
+      obj[key] = value;
+    }
+  } else {
+    if (isRefed) {
+      obj.value = value;
+    } else {
+      obj = value;
     }
   }
 }

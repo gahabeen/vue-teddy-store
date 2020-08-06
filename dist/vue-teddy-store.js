@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.63
+  * vue-teddy-store v0.2.64
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -124,23 +124,36 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       .join('.')
   }
 
+  const isArray = Array.isArray;
+
+  function isValidArrayIndex(val) {
+    const n = parseFloat(String(val));
+    return n >= 0 && Math.floor(n) === n && isFinite(val)
+  }
+
   // import * as memoize from './memoize'
 
   function setProp(obj, key, value) {
-    if (objectStringPath.isObject(obj) || Array.isArray(obj)) {
-      if (objectStringPath.isValidKey(key)) {
-        if (VueCompositionMethods.isRef(obj)) {
-          obj.value[key] = value;
-        } else {
-          obj[key] = value;
-        }
-        return VueCompositionMethods.unref(obj)[key]
+    const _obj = VueCompositionMethods.unref(obj);
+    const isRefed = VueCompositionMethods.isRef(obj);
+    if (isArray(_obj) && isValidArrayIndex(key)) {
+      _obj.length = Math.max(_obj.length, key);
+      if (isRefed) {
+        obj.value.splice(key, 1, value);
       } else {
-        if (VueCompositionMethods.isRef(obj)) {
-          obj.value = value;
-        } else {
-          obj = value;
-        }
+        obj.splice(key, 1, value);
+      }
+    } else if (objectStringPath.isValidKey(key) && key in _obj && !(key in Object.prototype)) {
+      if (isRefed) {
+        obj.value[key] = value;
+      } else {
+        obj[key] = value;
+      }
+    } else {
+      if (isRefed) {
+        obj.value = value;
+      } else {
+        obj = value;
       }
     }
   }
