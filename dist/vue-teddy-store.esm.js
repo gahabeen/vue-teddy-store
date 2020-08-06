@@ -1,11 +1,12 @@
 /*!
-  * vue-teddy-store v0.2.5
+  * vue-teddy-store v0.2.61
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, set as set$2, unref, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, isValidKey } from 'object-string-path';
 import Vue from 'vue';
+import equal from 'fast-deep-equal';
 
 const prefix = (space, name) => `teddy:${space}:${name}`;
 var cache = {
@@ -126,10 +127,10 @@ function resolvePath(arr) {
 function setProp(obj, key, value) {
   if (isObject(obj) || Array.isArray(obj)) {
     if (isValidKey(key)) {
-      try {
-        set$2(unref(obj), key, value);
-      } catch (error) {
-        console.error(`Couldn't not set value: ${{ obj, key, value }}`);
+      if (isRef(obj)) {
+        set$2(obj.value, key, value);
+      } else {
+        set$2(obj, key, value);
       }
       return unref(obj)[key]
     } else {
@@ -222,7 +223,8 @@ const teddyHas = makeHas({
   afterGetSteps,
 });
 
-const teddyGet = (space, name) =>
+const teddyGet = () =>
+  // space, name
   makeGet({
     getProp,
     hasProp,
@@ -230,7 +232,8 @@ const teddyGet = (space, name) =>
     // proxy: memoize.get(space, name),
   });
 
-const teddyRemove = (space, name) =>
+const teddyRemove = () =>
+  // space, name
   makeRemove({
     // TODO: This uses afterGetSteps in the teddyGet
     // Seek for a solution when memoize will be activated
@@ -428,9 +431,7 @@ const makeWatchers = (definition, watchers) => {
     // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
     const wrapper = (fn) =>
       function(newState, oldState) {
-        if ((newState !== undefined && oldState !== undefined) || newState !== oldState) {
-          fn.call(this, newState, oldState);
-        }
+        fn.call(this, newState, oldState, equal(newState, oldState));
       };
 
     const signWatcher = (path = '', handler) => `${path}||${handler.toString()}`;
@@ -482,9 +483,6 @@ const setWatchers = (definition, watchers) => {
     const exists = store.watchers.find((_watcher) => {
       const samePath = _watcher.path === watcher.path;
       const sameHandler = _watcher.signature === watcher.signature;
-      if (sameHandler) {
-        console.log(_watcher.signature, watcher.signature);
-      }
       return samePath && sameHandler
     });
     if (exists) {

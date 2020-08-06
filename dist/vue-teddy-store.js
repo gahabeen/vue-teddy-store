@@ -1,13 +1,14 @@
 /*!
-  * vue-teddy-store v0.2.5
+  * vue-teddy-store v0.2.61
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, equal) {
   'use strict';
 
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
   Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
+  equal = equal && Object.prototype.hasOwnProperty.call(equal, 'default') ? equal['default'] : equal;
 
   const prefix = (space, name) => `teddy:${space}:${name}`;
   var cache = {
@@ -128,10 +129,10 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   function setProp(obj, key, value) {
     if (objectStringPath.isObject(obj) || Array.isArray(obj)) {
       if (objectStringPath.isValidKey(key)) {
-        try {
-          VueCompositionMethods.set(VueCompositionMethods.unref(obj), key, value);
-        } catch (error) {
-          console.error(`Couldn't not set value: ${{ obj, key, value }}`);
+        if (VueCompositionMethods.isRef(obj)) {
+          VueCompositionMethods.set(obj.value, key, value);
+        } else {
+          VueCompositionMethods.set(obj, key, value);
         }
         return VueCompositionMethods.unref(obj)[key]
       } else {
@@ -224,7 +225,8 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     afterGetSteps,
   });
 
-  const teddyGet = (space, name) =>
+  const teddyGet = () =>
+    // space, name
     objectStringPath.makeGet({
       getProp,
       hasProp,
@@ -232,7 +234,8 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       // proxy: memoize.get(space, name),
     });
 
-  const teddyRemove = (space, name) =>
+  const teddyRemove = () =>
+    // space, name
     objectStringPath.makeRemove({
       // TODO: This uses afterGetSteps in the teddyGet
       // Seek for a solution when memoize will be activated
@@ -430,9 +433,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
       const wrapper = (fn) =>
         function(newState, oldState) {
-          if ((newState !== undefined && oldState !== undefined) || newState !== oldState) {
-            fn.call(this, newState, oldState);
-          }
+          fn.call(this, newState, oldState, equal(newState, oldState));
         };
 
       const signWatcher = (path = '', handler) => `${path}||${handler.toString()}`;
@@ -484,9 +485,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       const exists = store.watchers.find((_watcher) => {
         const samePath = _watcher.path === watcher.path;
         const sameHandler = _watcher.signature === watcher.signature;
-        if (sameHandler) {
-          console.log(_watcher.signature, watcher.signature);
-        }
         return samePath && sameHandler
       });
       if (exists) {
@@ -799,4 +797,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath, Vue));
+}({}, vueCompositionApi, objectStringPath, Vue, equal));

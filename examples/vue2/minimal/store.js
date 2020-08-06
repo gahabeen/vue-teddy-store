@@ -2,7 +2,7 @@ import Vue from 'vue'
 import VueCompositionApi from '@vue/composition-api'
 Vue.use(VueCompositionApi)
 
-import { setStore, install } from '../../../src/index'
+import { setStore, install, setFeature, features } from '../../../src/index'
 
 setStore('user', {
   state: {
@@ -25,5 +25,7 @@ setStore('user', {
     },
   },
 })
+
+setFeature(features.cache)
 
 export default install
