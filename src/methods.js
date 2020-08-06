@@ -1,3 +1,4 @@
+import Vue from 'vue'
 import * as VueCompositionMethods from '@vue/composition-api'
 import { isRef, ref, watch } from '@vue/composition-api'
 import equal from 'fast-deep-equal'
@@ -236,6 +237,9 @@ export const run = (definition, actionName, ...args) => {
 }
 
 export const remove = (definition, path, context) => {
+  if (Vue.config.devtools) {
+    console.log(`remove()`, { definition, path, context })
+  }
   const { space, name } = parseDefinition(definition)
   const store = getStore({ space, name })
   return accessors.teddyRemove(space, name)(store, path, context)
@@ -259,6 +263,9 @@ export const getter = (definition, path, context, orValue) => {
 }
 
 export const set = (definition, path, value, context) => {
+  if (Vue.config.devtools) {
+    console.log(`set()`, { definition, path, value, context })
+  }
   const store = getStore(definition)
   accessors.teddySet(store, path, value, context)
 }
