@@ -1,4 +1,5 @@
 import * as VueCompositionMethods from '@vue/composition-api'
+import equal from 'fast-deep-equal'
 import { isRef, ref, watch } from '@vue/composition-api'
 import { isObject } from 'object-string-path'
 import * as accessors from './accessors'
@@ -134,7 +135,7 @@ export const makeWatchers = (definition, watchers) => {
     // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
     const wrapper = (fn) =>
       function(newState, oldState) {
-        if ((newState !== undefined && oldState !== undefined) || newState !== oldState) {
+        if (!equal(newState, oldState)) {
           fn.call(this, newState, oldState)
         }
       }
@@ -188,9 +189,6 @@ export const setWatchers = (definition, watchers) => {
     const exists = store.watchers.find((_watcher) => {
       const samePath = _watcher.path === watcher.path
       const sameHandler = _watcher.signature === watcher.signature
-      if (sameHandler) {
-        console.log(_watcher.signature, watcher.signature)
-      }
       return samePath && sameHandler
     })
     if (exists) {
