@@ -1,4 +1,4 @@
-import { isRef, unref, set as vueCompSet } from '@vue/composition-api'
+import { isRef, unref } from '@vue/composition-api'
 import { isObject, isValidKey, makeGet, makeHas, makeSet, makeRemove } from 'object-string-path'
 import { isComputed, omit } from './utils'
 // import * as memoize from './memoize'
@@ -7,9 +7,9 @@ function setProp(obj, key, value) {
   if (isObject(obj) || Array.isArray(obj)) {
     if (isValidKey(key)) {
       if (isRef(obj)) {
-        vueCompSet(obj.value, key, value)
+        obj.value[key] = value
       } else {
-        vueCompSet(obj, key, value)
+        obj[key] = value
       }
       return unref(obj)[key]
     } else {
