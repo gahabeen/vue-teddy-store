@@ -6,10 +6,10 @@ import { isComputed, omit } from './utils'
 function setProp(obj, key, value) {
   if (isObject(obj) || Array.isArray(obj)) {
     if (isValidKey(key)) {
-      try {
-        vueCompSet(unref(obj), key, value)
-      } catch (error) {
-        console.error(`Couldn't not set value: ${{ obj, key, value }}`)
+      if (isRef(obj)) {
+        vueCompSet(obj.value, key, value)
+      } else {
+        vueCompSet(obj, key, value)
       }
       return unref(obj)[key]
     } else {
@@ -102,7 +102,8 @@ export const teddyHas = makeHas({
   afterGetSteps,
 })
 
-export const teddyGet = (space, name) =>
+export const teddyGet = () =>
+  // space, name
   makeGet({
     getProp,
     hasProp,
@@ -110,7 +111,8 @@ export const teddyGet = (space, name) =>
     // proxy: memoize.get(space, name),
   })
 
-export const teddyRemove = (space, name) =>
+export const teddyRemove = () =>
+  // space, name
   makeRemove({
     // TODO: This uses afterGetSteps in the teddyGet
     // Seek for a solution when memoize will be activated
