@@ -3,7 +3,7 @@ import VueCompositionApi from '@vue/composition-api'
 import { mount, createLocalVue } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
 import Vue from 'vue'
-import { Teddies, setFeature, features, setStore, set } from '@/index'
+import { Teddies, setFeature, features, setStore } from '@/index'
 Vue.use(VueCompositionApi)
 
 import { prefix } from '@/features/cache'
