@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.64
+  * vue-teddy-store v0.2.65
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -115,6 +115,16 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       }
       return acc
     }, {})
+  }
+
+  function debounce(fn, wait = 100) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        fn.apply(this, args);
+      }, wait);
+    }
   }
 
   function resolvePath(arr) {
@@ -444,19 +454,25 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
     return _watchers.reduce((list, watcher) => {
       // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
-      const wrapper = (fn) =>
-        function(newState, oldState) {
+      const wrapper = (fn, debounceDuration = null) => {
+        const wrapper = function(newState, oldState) {
           fn.call(this, newState, oldState, equal(newState, oldState));
         };
+        if (typeof debounceDuration === 'number') {
+          return debounce(wrapper, debounceDuration)
+        } else {
+          return wrapper
+        }
+      };
 
       const signWatcher = (path = '', handler) => `${path}||${handler.toString()}`;
-      const register = (path, watching, handler, options) => {
+      const register = (path, watching, handler, options = {}) => {
         list.push({
           path,
           signature: signWatcher(path, handler),
           options,
           start() {
-            this.unwatch = VueCompositionMethods.watch(watching, wrapper(handler), { deep: true, ...options });
+            this.unwatch = VueCompositionMethods.watch(watching, wrapper(handler, options.debounce), { deep: true, ...options });
             return this
           },
         });
