@@ -22,16 +22,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">76.92% </span>
+                <span class="strong">76.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>40/52</span>
+                <span class='fraction'>39/51</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">68.75% </span>
+                <span class="strong">67.39% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>33/48</span>
+                <span class='fraction'>31/46</span>
             </div>
         
             
@@ -43,9 +43,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">76.92% </span>
+                <span class="strong">76.47% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>40/52</span>
+                <span class='fraction'>39/51</span>
             </div>
         
             
@@ -197,11 +197,7 @@
 <a name='L139'></a><a href='#L139'>139</a>
 <a name='L140'></a><a href='#L140'>140</a>
 <a name='L141'></a><a href='#L141'>141</a>
-<a name='L142'></a><a href='#L142'>142</a>
-<a name='L143'></a><a href='#L143'>143</a>
-<a name='L144'></a><a href='#L144'>144</a>
-<a name='L145'></a><a href='#L145'>145</a>
-<a name='L146'></a><a href='#L146'>146</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L142'></a><a href='#L142'>142</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -248,15 +244,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">139x</span>
+<span class="cline-any cline-yes">132x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-yes">139x</span>
+<span class="cline-any cline-yes">132x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">139x</span>
-<span class="cline-any cline-yes">47x</span>
-<span class="cline-any cline-yes">92x</span>
-<span class="cline-any cline-yes">91x</span>
+<span class="cline-any cline-yes">132x</span>
+<span class="cline-any cline-yes">45x</span>
+<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-yes">86x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -283,16 +279,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">57x</span>
+<span class="cline-any cline-yes">53x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
@@ -408,25 +400,21 @@ function hasProp(obj, key) {
   }
 }
 &nbsp;
-function removeProp(_, parent, parentPath, key) {
-  const parentValue = unref(parent)
-  const parentIsRef = isRef(parent)
-  if (Array.isArray(parentValue)) {
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (parentIsRef) {
-<span class="cstat-no" title="statement not covered" >      parent.value.splice(+key, 1)</span>
+function removeProp(obj, key) {
+  const objValue = unref(obj)
+  const objIsRef = isRef(obj)
+  if (Array.isArray(objValue)) {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (objIsRef) {
+<span class="cstat-no" title="statement not covered" >      obj.value.splice(+key, 1)</span>
     } else {
-      parent.splice(+key, 1)
+      obj.splice(+key, 1)
     }
     return true
-  } else <span class="missing-if-branch" title="else path not taken" >E</span>if (isObject(parentValue)) {
-    if (parentIsRef) {
-      parent.value = omit(parent.value, [key])
+  } else <span class="missing-if-branch" title="else path not taken" >E</span>if (isObject(objValue)) {
+    if (objIsRef) {
+      obj.value = omit(obj.value, [key])
     } else {
-      delete parent[key]
-    }
-    <span class="missing-if-branch" title="else path not taken" >E</span>if (parentPath.length &gt; 0) {
-      // important for Vue reactivity after key deleted
-      // teddySet(obj, parentPath, { ...(parentIsRef ? parent.value : parent) }, context)
+      delete obj[key]
     }
     return true
   } else {
@@ -437,7 +425,7 @@ function removeProp(_, parent, parentPath, key) {
 }
 &nbsp;
 function afterGetSteps(steps = <span class="branch-0 cbranch-no" title="branch not covered" >[])</span> {
-  return steps[0] !== '_state' ? ['_state', ...steps] : steps
+  return steps[0] !== '_state' ? ['_state', ...steps] : <span class="branch-1 cbranch-no" title="branch not covered" >steps</span>
 }
 &nbsp;
 export const teddySet = makeSet({
@@ -498,7 +486,7 @@ export const remove = makeRemove({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank">istanbul</a>
-                at Mon Aug 03 2020 10:09:14 GMT+0200 (GMT+02:00)
+                at Thu Aug 06 2020 12:06:32 GMT+0200 (GMT+02:00)
             </div>
         </div>
         <script src="prettify.js"></script>

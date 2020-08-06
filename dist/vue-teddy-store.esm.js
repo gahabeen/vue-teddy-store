@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.41
+  * vue-teddy-store v0.2.42
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -149,7 +149,8 @@ function getProp(obj, key) {
         if (key in obj.value) {
           return obj.value[key]
         } else {
-          return obj.value
+          return
+          // return obj.value
         }
       } else {
         return obj[key]
@@ -180,23 +181,22 @@ function hasProp(obj, key) {
   }
 }
 
-function removeProp(_, parent, parentPath, key) {
-  const parentValue = unref(parent);
-  const parentIsRef = isRef(parent);
-  if (Array.isArray(parentValue)) {
-    if (parentIsRef) {
-      parent.value.splice(+key, 1);
+function removeProp(obj, key) {
+  const objValue = unref(obj);
+  const objIsRef = isRef(obj);
+  if (Array.isArray(objValue)) {
+    if (objIsRef) {
+      obj.value.splice(+key, 1);
     } else {
-      parent.splice(+key, 1);
+      obj.splice(+key, 1);
     }
     return true
-  } else if (isObject(parentValue)) {
-    if (parentIsRef) {
-      parent.value = omit(parent.value, [key]);
+  } else if (isObject(objValue)) {
+    if (objIsRef) {
+      obj.value = omit(obj.value, [key]);
     } else {
-      delete parent[key];
+      delete obj[key];
     }
-    if (parentPath.length > 0) ;
     return true
   } else {
     // nothing can be done?
@@ -232,7 +232,9 @@ const teddyGet = (space, name) =>
 
 const teddyRemove = (space, name) =>
   makeRemove({
-    get: teddyGet(),
+    // TODO: This uses afterGetSteps in the teddyGet
+    // Seek for a solution when memoize will be activated
+    // get: teddyGet(space, name),
     getProp,
     hasProp,
     removeProp,

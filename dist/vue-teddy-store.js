@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.41
+  * vue-teddy-store v0.2.42
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -151,7 +151,8 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
           if (key in obj.value) {
             return obj.value[key]
           } else {
-            return obj.value
+            return
+            // return obj.value
           }
         } else {
           return obj[key]
@@ -182,23 +183,22 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   }
 
-  function removeProp(_, parent, parentPath, key) {
-    const parentValue = VueCompositionMethods.unref(parent);
-    const parentIsRef = VueCompositionMethods.isRef(parent);
-    if (Array.isArray(parentValue)) {
-      if (parentIsRef) {
-        parent.value.splice(+key, 1);
+  function removeProp(obj, key) {
+    const objValue = VueCompositionMethods.unref(obj);
+    const objIsRef = VueCompositionMethods.isRef(obj);
+    if (Array.isArray(objValue)) {
+      if (objIsRef) {
+        obj.value.splice(+key, 1);
       } else {
-        parent.splice(+key, 1);
+        obj.splice(+key, 1);
       }
       return true
-    } else if (objectStringPath.isObject(parentValue)) {
-      if (parentIsRef) {
-        parent.value = omit(parent.value, [key]);
+    } else if (objectStringPath.isObject(objValue)) {
+      if (objIsRef) {
+        obj.value = omit(obj.value, [key]);
       } else {
-        delete parent[key];
+        delete obj[key];
       }
-      if (parentPath.length > 0) ;
       return true
     } else {
       // nothing can be done?
@@ -234,7 +234,9 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   const teddyRemove = (space, name) =>
     objectStringPath.makeRemove({
-      get: teddyGet(),
+      // TODO: This uses afterGetSteps in the teddyGet
+      // Seek for a solution when memoize will be activated
+      // get: teddyGet(space, name),
       getProp,
       hasProp,
       removeProp,
