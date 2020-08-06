@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.65
+  * vue-teddy-store v0.2.66
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -153,7 +153,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       } else {
         obj.splice(key, 1, value);
       }
-    } else if (objectStringPath.isValidKey(key) && key in _obj && !(key in Object.prototype)) {
+    } else if (objectStringPath.isValidKey(key) && objectStringPath.isObject(_obj)) {
       if (isRefed) {
         obj.value[key] = value;
       } else {

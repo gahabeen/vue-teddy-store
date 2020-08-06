@@ -13,7 +13,7 @@ function setProp(obj, key, value) {
     } else {
       obj.splice(key, 1, value)
     }
-  } else if (isValidKey(key) && key in _obj && !(key in Object.prototype)) {
+  } else if (isValidKey(key) && isObject(_obj)) {
     if (isRefed) {
       obj.value[key] = value
     } else {

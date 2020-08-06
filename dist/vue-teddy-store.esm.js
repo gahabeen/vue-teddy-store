@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.65
+  * vue-teddy-store v0.2.66
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -151,7 +151,7 @@ function setProp(obj, key, value) {
     } else {
       obj.splice(key, 1, value);
     }
-  } else if (isValidKey(key) && key in _obj && !(key in Object.prototype)) {
+  } else if (isValidKey(key) && isObject(_obj)) {
     if (isRefed) {
       obj.value[key] = value;
     } else {
