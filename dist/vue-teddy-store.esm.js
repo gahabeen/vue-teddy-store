@@ -3,7 +3,7 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+import VueCompositionMethods__default, { reactive, isRef, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, isValidKey } from 'object-string-path';
 import Vue from 'vue';
 import equal from 'fast-deep-equal';
@@ -128,9 +128,9 @@ function setProp(obj, key, value) {
   if (isObject(obj) || Array.isArray(obj)) {
     if (isValidKey(key)) {
       if (isRef(obj)) {
-        set$2(obj.value, key, value);
+        obj.value[key] = value;
       } else {
-        set$2(obj, key, value);
+        obj[key] = value;
       }
       return unref(obj)[key]
     } else {

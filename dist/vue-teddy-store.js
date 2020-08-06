@@ -130,9 +130,9 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     if (objectStringPath.isObject(obj) || Array.isArray(obj)) {
       if (objectStringPath.isValidKey(key)) {
         if (VueCompositionMethods.isRef(obj)) {
-          VueCompositionMethods.set(obj.value, key, value);
+          obj.value[key] = value;
         } else {
-          VueCompositionMethods.set(obj, key, value);
+          obj[key] = value;
         }
         return VueCompositionMethods.unref(obj)[key]
       } else {
