@@ -45,8 +45,4 @@ describe('methods - accessors - getter', () => {
     await flushPromises()
     expect(getter({ space, name }, `products.0.name`)()).toBe(store.state.products[0].name)
   })
-
-  /**
-   * TODO:
-   */
 })

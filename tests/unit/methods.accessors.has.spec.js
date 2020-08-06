@@ -137,7 +137,125 @@ describe('methods - accessors - has', () => {
     expect(has({ space, name }, `products[{key}={id}]`, { key: 'id', id: 1 })).toBe(true)
   })
 
-  /**
-   * TODO:
-   */
+    /* Spread operator */
+
+    it('has() should check if has a spread path in sub-array', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: [{ name: 'berries' }],
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products..`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
+  
+    it('has() should check if has a spread (with star) path in sub-array', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: [{ name: 'berries' }],
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products.*`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
+  
+    it('has() should check if has a spread path in sub-array path', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: [{ name: 'berries' }],
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products..name`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
+  
+    it('has() should check if has a spread (with star) path in sub-array path', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: [{ name: 'berries' }],
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products.*.name`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
+  
+    it('has() should check if has a spread path in sub-object', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: { 1: { name: 'berries' } },
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products..`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
+  
+    it('has() should check if has a spread (with star) path in sub-object', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: { 1: { name: 'berries' } },
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products.*`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
+  
+    it('has() should check if has a spread path in sub-object path', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: { 1: { name: 'berries' } },
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products..name`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
+  
+    it('has() should check if has a spread (with star) path in sub-object path', async () => {
+      const space = nanoid()
+      const name = nanoid()
+      const state = {
+        products: { 1: { name: 'berries' } },
+      }
+      setStore({ space, name }, { state })
+  
+      await flushPromises()
+      const valid = has({ space, name }, `products.*.name`)
+  
+      await flushPromises()
+      expect(valid).toBe(true)
+    })
 })
