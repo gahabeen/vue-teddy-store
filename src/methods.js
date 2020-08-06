@@ -131,13 +131,24 @@ export const makeWatchers = (definition, watchers) => {
   if (_watchers.length === 0) return []
 
   return _watchers.reduce((list, watcher) => {
+    // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
+    const wrapper = (fn) =>
+      function(newState, oldState) {
+        if ((newState !== undefined && oldState !== undefined) || newState !== oldState) {
+          fn.call(this, newState, oldState)
+        }
+      }
+
+    const signWatcher = (path = '', handler) => `${path}||${handler.toString()}`
     const register = (path, watching, handler, options) => {
-      const unwatch = watch(watching, handler, { deep: true, ...options })
       list.push({
         path,
-        handler,
+        signature: signWatcher(path, handler),
         options,
-        unwatch,
+        start() {
+          this.unwatch = watch(watching, wrapper(handler), { deep: true, ...options })
+          return this
+        },
       })
     }
 
@@ -148,29 +159,23 @@ export const makeWatchers = (definition, watchers) => {
     // Watcher is an object definition with a .handler()
     else if (watcher && typeof watcher === 'object' && 'handler' in watcher) {
       const { handler, path, paths = [], ...options } = watcher
-      // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
-      const wrapper = (fn) =>
-        function(newState, oldState) {
-          if ((newState !== undefined && oldState !== undefined) || newState !== oldState) {
-            fn.call(this, newState, oldState)
-          }
-        }
+
       // Contains a path
       if (typeof path === 'string') {
-        register(path, () => accessors.teddyGet(space, name)(store, path), wrapper(handler), { deep: true, ...options })
+        register(path, () => accessors.teddyGet(space, name)(store, path), handler, { deep: true, ...options })
       }
       // Contains paths
       else if (paths.length > 0) {
         register(
           paths.map((p) => utils.resolvePath([name, p])),
           paths.map((p) => () => accessors.teddyGet(space, name)(store, p)),
-          wrapper(handler),
+          handler,
           { deep: true, ...options }
         )
       }
       // Global watcher
       else {
-        register(`state`, () => store.state, wrapper(handler), { deep: true, ...options })
+        register(`state`, () => store.state, handler, { deep: true, ...options })
       }
     }
     return list
@@ -179,7 +184,20 @@ export const makeWatchers = (definition, watchers) => {
 
 export const setWatchers = (definition, watchers) => {
   const store = getStore(definition)
-  store.watchers = [...(store.watchers || []), ...makeWatchers(definition, watchers)]
+  for (const watcher of makeWatchers(definition, watchers)) {
+    const exists = store.watchers.find((_watcher) => {
+      const samePath = _watcher.path === watcher.path
+      const sameHandler = _watcher.signature === watcher.signature
+      if (sameHandler) {
+        console.log(_watcher.signature, watcher.signature)
+      }
+      return samePath && sameHandler
+    })
+    if (exists) {
+      exists.unwatch()
+    }
+    store.watchers.push(watcher.start())
+  }
   return store
 }
 
