@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.61
+  * vue-teddy-store v0.2.62
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -532,6 +532,9 @@ const run = (definition, actionName, ...args) => {
 };
 
 const remove$1 = (definition, path, context) => {
+  if (Vue.config.devtools) {
+    console.log(`remove()`, { definition, path, context });
+  }
   const { space, name } = parseDefinition(definition);
   const store = getStore({ space, name });
   return teddyRemove()(store, path, context)
@@ -555,6 +558,9 @@ const getter = (definition, path, context, orValue) => {
 };
 
 const set$1 = (definition, path, value, context) => {
+  if (Vue.config.devtools) {
+    console.log(`set()`, { definition, path, value, context });
+  }
   const store = getStore(definition);
   teddySet(store, path, value, context);
 };
