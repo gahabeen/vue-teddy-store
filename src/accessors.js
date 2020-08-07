@@ -1,5 +1,5 @@
 import { isRef, unref } from '@vue/composition-api'
-import { isObject, isValidKey, makeGet, makeHas, makeSet, makeRemove } from 'object-string-path'
+import { isObject, isValidKey, makeGet, makeHas, makeSet, makeRemove, makePush, makeUnshift } from 'object-string-path'
 import { isComputed, isArray, omit, isValidArrayIndex } from './utils'
 // import * as memoize from './memoize'
 
@@ -91,6 +91,34 @@ function removeProp(obj, key) {
   }
 }
 
+function pushProp(target, value) {
+  const targetValue = unref(target)
+  const targetIsRef = isRef(target)
+  console.log({ target, value })
+  if (Array.isArray(targetValue)) {
+    if (targetIsRef) {
+      target.value.push(value)
+      return target.value.slice(-1)[0]
+    } else {
+      target.push(value)
+      return target.slice(-1)[0]
+    }
+  }
+}
+
+function unshiftProp(target, value) {
+  const targetValue = unref(target)
+  const targetIsRef = isRef(target)
+  if (Array.isArray(targetValue)) {
+    if (targetIsRef) {
+      target.value.unshift(value)
+      return target.value[0]
+    } else {
+      target.unshift(value)
+      return target[0]
+    }
+  }
+}
 function afterGetSteps(steps = []) {
   return steps[0] !== '_state' ? ['_state', ...steps] : steps
 }
@@ -108,26 +136,33 @@ export const teddyHas = makeHas({
   afterGetSteps,
 })
 
-export const teddyGet = () =>
-  // space, name
-  makeGet({
-    getProp,
-    hasProp,
-    afterGetSteps,
-    // proxy: memoize.get(space, name),
-  })
+export const teddyGet = makeGet({
+  getProp,
+  hasProp,
+  afterGetSteps,
+  // proxy: memoize.get(space, name),
+})
 
-export const teddyRemove = () =>
-  // space, name
-  makeRemove({
-    // TODO: This uses afterGetSteps in the teddyGet
-    // Seek for a solution when memoize will be activated
-    // get: teddyGet(space, name),
-    getProp,
-    hasProp,
-    removeProp,
-    afterGetSteps,
-  })
+export const teddyRemove = makeRemove({
+  getProp,
+  hasProp,
+  removeProp,
+  afterGetSteps,
+})
+
+export const teddyPush = makePush({
+  getProp,
+  hasProp,
+  pushProp,
+  afterGetSteps,
+})
+
+export const teddyUnshift = makeUnshift({
+  getProp,
+  hasProp,
+  unshiftProp,
+  afterGetSteps,
+})
 
 export const set = makeSet({
   setProp,
@@ -146,7 +181,18 @@ export const get = makeGet({
 })
 
 export const remove = makeRemove({
-  get,
   getProp,
   hasProp,
+})
+
+export const push = makePush({
+  getProp,
+  hasProp,
+  pushProp,
+})
+
+export const unshift = makeUnshift({
+  getProp,
+  hasProp,
+  unshiftProp,
 })

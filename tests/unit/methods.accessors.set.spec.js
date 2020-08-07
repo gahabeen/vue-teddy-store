@@ -6,7 +6,7 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
-describe('methods - setors - set', () => {
+describe('methods - accessors - set', () => {
   it('set() should set a simple path', async () => {
     const space = nanoid()
     const name = nanoid()

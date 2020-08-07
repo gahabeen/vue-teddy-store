@@ -119,7 +119,7 @@ export const setActions = (definition, actions) => {
 }
 
 export const makeWatchers = (definition, watchers) => {
-  const { space, name } = parseDefinition(definition)
+  const { name } = parseDefinition(definition)
   const store = getStore(definition)
 
   const _watchers = []
@@ -168,13 +168,13 @@ export const makeWatchers = (definition, watchers) => {
 
       // Contains a path
       if (typeof path === 'string') {
-        register(path, () => accessors.teddyGet(space, name)(store, path), handler, { deep: true, ...options })
+        register(path, () => accessors.teddyGet(store, path), handler, { deep: true, ...options })
       }
       // Contains paths
       else if (paths.length > 0) {
         register(
           paths.map((p) => utils.resolvePath([name, p])),
-          paths.map((p) => () => accessors.teddyGet(space, name)(store, p)),
+          paths.map((p) => () => accessors.teddyGet(store, p)),
           handler,
           { deep: true, ...options }
         )
@@ -248,7 +248,7 @@ export const remove = (definition, path, context) => {
   }
   const { space, name } = parseDefinition(definition)
   const store = getStore({ space, name })
-  return accessors.teddyRemove(space, name)(store, path, context)
+  return accessors.teddyRemove(store, path, context)
 }
 
 export const has = (definition, path, context) => {
@@ -259,7 +259,7 @@ export const has = (definition, path, context) => {
 export const get = (definition, path, context, orValue) => {
   const { space, name } = parseDefinition(definition)
   const store = getStore({ space, name })
-  return accessors.teddyGet(space, name)(store, path, context) || orValue
+  return accessors.teddyGet(store, path, context) || orValue
 }
 
 export const getter = (definition, path, context, orValue) => {
@@ -280,6 +280,22 @@ export const setter = (definition, path, context) => {
   return function(value) {
     set(definition, path, value, context || this)
   }
+}
+
+export const push = (definition, path, value, context) => {
+  if (Vue.config.devtools) {
+    console.log(`push()`, { definition, path, value, context })
+  }
+  const store = getStore(definition)
+  accessors.teddyPush(store, path, value, context)
+}
+
+export const unshift = (definition, path, value, context) => {
+  if (Vue.config.devtools) {
+    console.log(`unshift()`, { definition, path, value, context })
+  }
+  const store = getStore(definition)
+  accessors.teddyUnshift(store, path, value, context)
 }
 
 export const sync = (definition, path, context) => {
