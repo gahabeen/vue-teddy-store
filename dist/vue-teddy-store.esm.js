@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.67
+  * vue-teddy-store v0.2.7
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -734,6 +734,8 @@ const mapMethods = (mapper = (fn) => fn) => {
     set: mapper(set$1),
     setter: mapper(setter),
     sync: mapper(sync$1),
+    push: mapper(push$1),
+    unshift: mapper(unshift$1),
   }
 };
 
