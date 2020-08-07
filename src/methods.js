@@ -366,6 +366,8 @@ export const mapMethods = (mapper = (fn) => fn) => {
     set: mapper(set),
     setter: mapper(setter),
     sync: mapper(sync),
+    push: mapper(push),
+    unshift: mapper(unshift),
   }
 }
 
