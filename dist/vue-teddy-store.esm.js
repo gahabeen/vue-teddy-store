@@ -1,10 +1,10 @@
 /*!
-  * vue-teddy-store v0.2.66
+  * vue-teddy-store v0.2.67
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
 import VueCompositionMethods__default, { reactive, unref, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
-import { isObject, makeSet, makeHas, makeGet, makeRemove, isValidKey } from 'object-string-path';
+import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, isValidKey } from 'object-string-path';
 import Vue from 'vue';
 import equal from 'fast-deep-equal';
 
@@ -229,6 +229,34 @@ function removeProp(obj, key) {
   }
 }
 
+function pushProp(target, value) {
+  const targetValue = unref(target);
+  const targetIsRef = isRef(target);
+  console.log({ target, value });
+  if (Array.isArray(targetValue)) {
+    if (targetIsRef) {
+      target.value.push(value);
+      return target.value.slice(-1)[0]
+    } else {
+      target.push(value);
+      return target.slice(-1)[0]
+    }
+  }
+}
+
+function unshiftProp(target, value) {
+  const targetValue = unref(target);
+  const targetIsRef = isRef(target);
+  if (Array.isArray(targetValue)) {
+    if (targetIsRef) {
+      target.value.unshift(value);
+      return target.value[0]
+    } else {
+      target.unshift(value);
+      return target[0]
+    }
+  }
+}
 function afterGetSteps(steps = []) {
   return steps[0] !== '_state' ? ['_state', ...steps] : steps
 }
@@ -246,26 +274,33 @@ const teddyHas = makeHas({
   afterGetSteps,
 });
 
-const teddyGet = () =>
-  // space, name
-  makeGet({
-    getProp,
-    hasProp,
-    afterGetSteps,
-    // proxy: memoize.get(space, name),
-  });
+const teddyGet = makeGet({
+  getProp,
+  hasProp,
+  afterGetSteps,
+  // proxy: memoize.get(space, name),
+});
 
-const teddyRemove = () =>
-  // space, name
-  makeRemove({
-    // TODO: This uses afterGetSteps in the teddyGet
-    // Seek for a solution when memoize will be activated
-    // get: teddyGet(space, name),
-    getProp,
-    hasProp,
-    removeProp,
-    afterGetSteps,
-  });
+const teddyRemove = makeRemove({
+  getProp,
+  hasProp,
+  removeProp,
+  afterGetSteps,
+});
+
+const teddyPush = makePush({
+  getProp,
+  hasProp,
+  pushProp,
+  afterGetSteps,
+});
+
+const teddyUnshift = makeUnshift({
+  getProp,
+  hasProp,
+  unshiftProp,
+  afterGetSteps,
+});
 
 const set = makeSet({
   setProp,
@@ -284,9 +319,20 @@ const get = makeGet({
 });
 
 const remove = makeRemove({
-  get,
   getProp,
   hasProp,
+});
+
+const push = makePush({
+  getProp,
+  hasProp,
+  pushProp,
+});
+
+const unshift = makeUnshift({
+  getProp,
+  hasProp,
+  unshiftProp,
 });
 
 var accessors = /*#__PURE__*/Object.freeze({
@@ -295,10 +341,14 @@ var accessors = /*#__PURE__*/Object.freeze({
   teddyHas: teddyHas,
   teddyGet: teddyGet,
   teddyRemove: teddyRemove,
+  teddyPush: teddyPush,
+  teddyUnshift: teddyUnshift,
   set: set,
   has: has,
   get: get,
-  remove: remove
+  remove: remove,
+  push: push,
+  unshift: unshift
 });
 
 Vue.use(VueCompositionMethods__default);
@@ -437,7 +487,7 @@ const setActions = (definition, actions) => {
 };
 
 const makeWatchers = (definition, watchers) => {
-  const { space, name } = parseDefinition(definition);
+  const { name } = parseDefinition(definition);
   const store = getStore(definition);
 
   const _watchers = [];
@@ -486,13 +536,13 @@ const makeWatchers = (definition, watchers) => {
 
       // Contains a path
       if (typeof path === 'string') {
-        register(path, () => teddyGet()(store, path), handler, { deep: true, ...options });
+        register(path, () => teddyGet(store, path), handler, { deep: true, ...options });
       }
       // Contains paths
       else if (paths.length > 0) {
         register(
           paths.map((p) => resolvePath([name, p])),
-          paths.map((p) => () => teddyGet()(store, p)),
+          paths.map((p) => () => teddyGet(store, p)),
           handler,
           { deep: true, ...options }
         );
@@ -566,7 +616,7 @@ const remove$1 = (definition, path, context) => {
   }
   const { space, name } = parseDefinition(definition);
   const store = getStore({ space, name });
-  return teddyRemove()(store, path, context)
+  return teddyRemove(store, path, context)
 };
 
 const has$1 = (definition, path, context) => {
@@ -577,7 +627,7 @@ const has$1 = (definition, path, context) => {
 const get$1 = (definition, path, context, orValue) => {
   const { space, name } = parseDefinition(definition);
   const store = getStore({ space, name });
-  return teddyGet()(store, path, context) || orValue
+  return teddyGet(store, path, context) || orValue
 };
 
 const getter = (definition, path, context, orValue) => {
@@ -598,6 +648,22 @@ const setter = (definition, path, context) => {
   return function(value) {
     set$1(definition, path, value, context || this);
   }
+};
+
+const push$1 = (definition, path, value, context) => {
+  if (Vue.config.devtools) {
+    console.log(`push()`, { definition, path, value, context });
+  }
+  const store = getStore(definition);
+  teddyPush(store, path, value, context);
+};
+
+const unshift$1 = (definition, path, value, context) => {
+  if (Vue.config.devtools) {
+    console.log(`unshift()`, { definition, path, value, context });
+  }
+  const store = getStore(definition);
+  teddyUnshift(store, path, value, context);
 };
 
 const sync$1 = (definition, path, context) => {
@@ -774,6 +840,8 @@ var output = /*#__PURE__*/Object.freeze({
   getter: getter,
   set: set$1,
   setter: setter,
+  push: push$1,
+  unshift: unshift$1,
   sync: sync$1,
   setFeature: setFeature,
   mapMethods: mapMethods,
@@ -791,4 +859,4 @@ const install = (VueInstance) => {
   VueInstance.prototype.$teddy = output;
 };
 
-export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, remove$1 as remove, reset, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, useStore, useTeddy };
+export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, push$1 as push, remove$1 as remove, reset, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, unshift$1 as unshift, useStore, useTeddy };
