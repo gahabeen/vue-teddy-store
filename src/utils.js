@@ -32,16 +32,6 @@ export function pick(obj, keys = [], modifier = (v) => v) {
   return _obj
 }
 
-export function debounce(fn, wait = 100) {
-  let timeout
-  return function(...args) {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => {
-      fn.apply(this, args)
-    }, wait)
-  }
-}
-
 export function resolvePath(arr) {
   return arr
     .filter(Boolean)

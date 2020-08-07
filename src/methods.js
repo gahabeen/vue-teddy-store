@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import debounce from 'debounce'
 import * as VueCompositionMethods from '@vue/composition-api'
 import { isRef, ref, watch } from '@vue/composition-api'
 import equal from 'fast-deep-equal'
@@ -139,7 +140,7 @@ export const makeWatchers = (definition, watchers) => {
         fn.call(this, newState, oldState, equal(newState, oldState))
       }
       if (typeof debounceDuration === 'number') {
-        return utils.debounce(wrapper, debounceDuration)
+        return debounce(wrapper, debounceDuration, true)
       } else {
         return wrapper
       }
