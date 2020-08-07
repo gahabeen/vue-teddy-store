@@ -1,13 +1,14 @@
 /*!
-  * vue-teddy-store v0.2.7
+  * vue-teddy-store v0.2.71
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, equal) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, debounce, equal) {
   'use strict';
 
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
   Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
+  debounce = debounce && Object.prototype.hasOwnProperty.call(debounce, 'default') ? debounce['default'] : debounce;
   equal = equal && Object.prototype.hasOwnProperty.call(equal, 'default') ? equal['default'] : equal;
 
   const prefix = (space, name) => `teddy:${space}:${name}`;
@@ -115,16 +116,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       }
       return acc
     }, {})
-  }
-
-  function debounce(fn, wait = 100) {
-    let timeout;
-    return function(...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        fn.apply(this, args);
-      }, wait);
-    }
   }
 
   function resolvePath(arr) {
@@ -509,7 +500,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
           fn.call(this, newState, oldState, equal(newState, oldState));
         };
         if (typeof debounceDuration === 'number') {
-          return debounce(wrapper, debounceDuration)
+          return debounce(wrapper, debounceDuration, true)
         } else {
           return wrapper
         }
@@ -904,4 +895,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath, Vue, equal));
+}({}, vueCompositionApi, objectStringPath, Vue, debounce, equal));

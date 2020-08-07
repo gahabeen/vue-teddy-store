@@ -1,11 +1,12 @@
 /*!
-  * vue-teddy-store v0.2.7
+  * vue-teddy-store v0.2.71
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
 import VueCompositionMethods__default, { reactive, unref, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, isValidKey } from 'object-string-path';
 import Vue from 'vue';
+import debounce from 'debounce';
 import equal from 'fast-deep-equal';
 
 const prefix = (space, name) => `teddy:${space}:${name}`;
@@ -113,16 +114,6 @@ function omit(obj, keys = []) {
     }
     return acc
   }, {})
-}
-
-function debounce(fn, wait = 100) {
-  let timeout;
-  return function(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      fn.apply(this, args);
-    }, wait);
-  }
 }
 
 function resolvePath(arr) {
@@ -507,7 +498,7 @@ const makeWatchers = (definition, watchers) => {
         fn.call(this, newState, oldState, equal(newState, oldState));
       };
       if (typeof debounceDuration === 'number') {
-        return debounce(wrapper, debounceDuration)
+        return debounce(wrapper, debounceDuration, true)
       } else {
         return wrapper
       }
