@@ -1,12 +1,12 @@
 import { push, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+import VueCompositionApi, { watch } from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
 import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
-describe('methods - accessors - push', () => {
+describe.only('methods - accessors - push', () => {
   it('push() should push a simple path', async () => {
     const space = nanoid()
     const name = nanoid()
@@ -41,7 +41,6 @@ describe('methods - accessors - push', () => {
     expect(store.state.products[0].list).toEqual([true])
   })
 
-
   it('push() should push a simple path with variable', async () => {
     const space = nanoid()
     const name = nanoid()
@@ -59,6 +58,51 @@ describe('methods - accessors - push', () => {
     expect(store.state.products).toEqual([{ name: 'berries' }, { name: 'honey' }])
   })
 
+  it('push() should push a simple path to empty array with variable', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [],
+        },
+      }
+    )
+
+    await flushPromises()
+    push({ space, name }, `{key}`, { name: 'honey' }, { key: 'products' })
+    expect(store.state.products).toEqual([{ name: 'honey' }])
+  })
+
+  it('push() should fire a watchable update', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [],
+        },
+      }
+    )
+
+    let hit = 0
+
+    watch(
+      store.state,
+      () => {
+        hit = hit + 1
+      }
+    )
+
+    await flushPromises()
+    // store._state.value = {}
+    push({ space, name }, `products`, { name: 'honey' })
+    await flushPromises()
+    expect(hit).toEqual(1)
+  })
+
   // it('push() should push a path in sub-array with variable', async () => {
   //   const space = nanoid()
   //   const name = nanoid()
@@ -73,7 +117,7 @@ describe('methods - accessors - push', () => {
 
   //   await flushPromises()
   //   push({ space, name }, `products.{key}`, true, { key: 0 })
-  //   expect(store.state.products[0]).toBe(true)
+  //   expect(store.state.products[1]).toBe(true)
   // })
 
   // it('push() should push a path in sub-array object with variable', async () => {

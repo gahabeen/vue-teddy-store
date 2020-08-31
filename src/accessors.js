@@ -6,6 +6,7 @@ import { isComputed, isArray, omit, isValidArrayIndex } from './utils'
 function setProp(obj, key, value) {
   const _obj = unref(obj)
   const isRefed = isRef(obj)
+  console.log({isRefed, obj, key, value});
   if (isArray(_obj) && isValidArrayIndex(key)) {
     _obj.length = Math.max(_obj.length, key)
     if (isRefed) {
@@ -94,14 +95,17 @@ function removeProp(obj, key) {
 function pushProp(target, value) {
   const targetValue = unref(target)
   const targetIsRef = isRef(target)
-  console.log({ target, value })
   if (Array.isArray(targetValue)) {
     if (targetIsRef) {
-      target.value.push(value)
-      return target.value.slice(-1)[0]
+      // target.value.splice(target.value.length, 0, value)
+      // obj[key].value.push(value)
+      return [...target.value, value]
+      // return target.value.slice(-1)[0]
     } else {
-      target.push(value)
-      return target.slice(-1)[0]
+      // obj[key].push(value)
+      return [...target, value]
+      // target.splice(target.length, 0, value)
+      // return target.slice(-1)[0]
     }
   }
 }
@@ -111,14 +115,17 @@ function unshiftProp(target, value) {
   const targetIsRef = isRef(target)
   if (Array.isArray(targetValue)) {
     if (targetIsRef) {
+      // target.value.splice(0, 0, value);
       target.value.unshift(value)
-      return target.value[0]
+      return target.value
     } else {
+      // target.splice(0, 0, value);
       target.unshift(value)
-      return target[0]
+      return target
     }
   }
 }
+
 function afterGetSteps(steps = []) {
   return steps[0] !== '_state' ? ['_state', ...steps] : steps
 }
@@ -151,6 +158,7 @@ export const teddyRemove = makeRemove({
 })
 
 export const teddyPush = makePush({
+  setProp,
   getProp,
   hasProp,
   pushProp,
@@ -158,6 +166,7 @@ export const teddyPush = makePush({
 })
 
 export const teddyUnshift = makeUnshift({
+  setProp,
   getProp,
   hasProp,
   unshiftProp,
@@ -186,12 +195,14 @@ export const remove = makeRemove({
 })
 
 export const push = makePush({
+  setProp,
   getProp,
   hasProp,
   pushProp,
 })
 
 export const unshift = makeUnshift({
+  setProp,
   getProp,
   hasProp,
   unshiftProp,

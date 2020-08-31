@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.71
+  * vue-teddy-store v0.2.72
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -135,6 +135,7 @@ function isValidArrayIndex(val) {
 function setProp(obj, key, value) {
   const _obj = unref(obj);
   const isRefed = isRef(obj);
+  console.log({isRefed, obj, key, value});
   if (isArray(_obj) && isValidArrayIndex(key)) {
     _obj.length = Math.max(_obj.length, key);
     if (isRefed) {
@@ -223,14 +224,17 @@ function removeProp(obj, key) {
 function pushProp(target, value) {
   const targetValue = unref(target);
   const targetIsRef = isRef(target);
-  console.log({ target, value });
   if (Array.isArray(targetValue)) {
     if (targetIsRef) {
-      target.value.push(value);
-      return target.value.slice(-1)[0]
+      // target.value.splice(target.value.length, 0, value)
+      // obj[key].value.push(value)
+      return [...target.value, value]
+      // return target.value.slice(-1)[0]
     } else {
-      target.push(value);
-      return target.slice(-1)[0]
+      // obj[key].push(value)
+      return [...target, value]
+      // target.splice(target.length, 0, value)
+      // return target.slice(-1)[0]
     }
   }
 }
@@ -240,14 +244,17 @@ function unshiftProp(target, value) {
   const targetIsRef = isRef(target);
   if (Array.isArray(targetValue)) {
     if (targetIsRef) {
+      // target.value.splice(0, 0, value);
       target.value.unshift(value);
-      return target.value[0]
+      return target.value
     } else {
+      // target.splice(0, 0, value);
       target.unshift(value);
-      return target[0]
+      return target
     }
   }
 }
+
 function afterGetSteps(steps = []) {
   return steps[0] !== '_state' ? ['_state', ...steps] : steps
 }
@@ -280,6 +287,7 @@ const teddyRemove = makeRemove({
 });
 
 const teddyPush = makePush({
+  setProp,
   getProp,
   hasProp,
   pushProp,
@@ -287,6 +295,7 @@ const teddyPush = makePush({
 });
 
 const teddyUnshift = makeUnshift({
+  setProp,
   getProp,
   hasProp,
   unshiftProp,
@@ -315,12 +324,14 @@ const remove = makeRemove({
 });
 
 const push = makePush({
+  setProp,
   getProp,
   hasProp,
   pushProp,
 });
 
 const unshift = makeUnshift({
+  setProp,
   getProp,
   hasProp,
   unshiftProp,
@@ -602,9 +613,9 @@ const run = (definition, actionName, ...args) => {
 };
 
 const remove$1 = (definition, path, context) => {
-  if (Vue.config.devtools) {
-    console.log(`remove()`, { definition, path, context });
-  }
+  // if (Vue.config.devtools) {
+  //   console.log(`remove()`, { definition, path, context })
+  // }
   const { space, name } = parseDefinition(definition);
   const store = getStore({ space, name });
   return teddyRemove(store, path, context)
@@ -628,9 +639,9 @@ const getter = (definition, path, context, orValue) => {
 };
 
 const set$1 = (definition, path, value, context) => {
-  if (Vue.config.devtools) {
-    console.log(`set()`, { definition, path, value, context });
-  }
+  // if (Vue.config.devtools) {
+  //   console.log(`set()`, { definition, path, value, context })
+  // }
   const store = getStore(definition);
   teddySet(store, path, value, context);
 };
@@ -642,17 +653,17 @@ const setter = (definition, path, context) => {
 };
 
 const push$1 = (definition, path, value, context) => {
-  if (Vue.config.devtools) {
-    console.log(`push()`, { definition, path, value, context });
-  }
+  // if (Vue.config.devtools) {
+  //   console.log(`push()`, { definition, path, value, context })
+  // }
   const store = getStore(definition);
   teddyPush(store, path, value, context);
 };
 
 const unshift$1 = (definition, path, value, context) => {
-  if (Vue.config.devtools) {
-    console.log(`unshift()`, { definition, path, value, context });
-  }
+  // if (Vue.config.devtools) {
+  //   console.log(`unshift()`, { definition, path, value, context })
+  // }
   const store = getStore(definition);
   teddyUnshift(store, path, value, context);
 };
