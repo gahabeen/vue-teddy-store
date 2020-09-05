@@ -7,6 +7,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('memoize', () => {
   it('getDecorated() should provide a cached value on n+1 calls', async () => {
     const space = nanoid()

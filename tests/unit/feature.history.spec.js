@@ -6,6 +6,9 @@ import Vue from 'vue'
 import { Teddies, setFeature, features, setStore } from '@/index'
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('feature, history', () => {
   it(`should save the state in history`, async () => {
     const localVue = createLocalVue()

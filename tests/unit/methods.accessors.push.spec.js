@@ -6,6 +6,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe.only('methods - accessors - push', () => {
   it('push() should push a simple path', async () => {
     const space = nanoid()

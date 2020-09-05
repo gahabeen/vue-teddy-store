@@ -7,6 +7,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - accessors - sync [vue 3]', () => {
   it('sync() should provide a sync function to set a simple path', async () => {
     const localVue = createLocalVue()

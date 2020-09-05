@@ -6,7 +6,6 @@ import { isComputed, isArray, omit, isValidArrayIndex } from './utils'
 function setProp(obj, key, value) {
   const _obj = unref(obj)
   const isRefed = isRef(obj)
-  console.log({isRefed, obj, key, value});
   if (isArray(_obj) && isValidArrayIndex(key)) {
     _obj.length = Math.max(_obj.length, key)
     if (isRefed) {

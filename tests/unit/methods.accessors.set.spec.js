@@ -1,10 +1,13 @@
 import { set, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+import VueCompositionApi, { watch } from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
 import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
+
+Vue.config.productionTip = false
+Vue.config.devtools = false
 
 describe('methods - accessors - set', () => {
   it('set() should set a simple path', async () => {
@@ -297,5 +300,73 @@ describe('methods - accessors - set', () => {
 
     await flushPromises()
     expect(store.state.products).toEqual({ 1: { name: null } })
+  })
+
+  it('set() should fire a watchable update on root on 1-step path', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      products: [],
+    }
+    const store = setStore({ space, name }, { state })
+
+    let hit = 0
+
+    watch(store.state, () => {
+      hit = hit + 1
+    })
+
+    await flushPromises()
+    set({ space, name }, 'products', [{ name: 'honey' }])
+    await flushPromises()
+    expect(hit).toEqual(1)
+  })
+
+  it('set() should fire a watchable update on root on 2-step path', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      categories: {
+        first: {
+          products: [],
+        },
+      },
+    }
+    const store = setStore({ space, name }, { state })
+
+    let hit = 0
+
+    watch(store.state, () => {
+      hit = hit + 1
+    })
+
+    await flushPromises()
+    set({ space, name }, 'categories.first', { others: [] })
+    await flushPromises()
+    expect(hit).toEqual(1)
+  })
+
+  it('set() should fire a watchable update on root on 3-step path', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      categories: {
+        first: {
+          products: [],
+        },
+      },
+    }
+    const store = setStore({ space, name }, { state })
+
+    let hit = 0
+
+    watch(store.state, () => {
+      hit = hit + 1
+    })
+
+    await flushPromises()
+    set({ space, name }, 'categories.first.products', [{ name: 'top' }])
+    await flushPromises()
+    expect(hit).toEqual(1)
   })
 })

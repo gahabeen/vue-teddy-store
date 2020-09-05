@@ -6,6 +6,9 @@ import Vue from 'vue'
 import { Teddies, setFeature, features, setStore } from '@/index'
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 import { prefix } from '@/features/cache'
 
 describe('feature, cache', () => {

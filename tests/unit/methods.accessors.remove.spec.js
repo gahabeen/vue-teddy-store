@@ -6,6 +6,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - accessors - remove', () => {
   it('remove() should remove a simple path', async () => {
     const space = nanoid()

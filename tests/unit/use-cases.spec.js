@@ -7,6 +7,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('use cases - ', () => {
   it(`should be able to use $route params in mounted()`, async () => {
     const localVue = createLocalVue()

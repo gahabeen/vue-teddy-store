@@ -6,6 +6,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - accessors - unshift', () => {
   it('unshift() should unshift a simple path', async () => {
     const space = nanoid()

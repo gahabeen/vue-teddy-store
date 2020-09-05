@@ -6,6 +6,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - accessors - setter', () => {
   it('setter() should provide a setter function to set a simple path', async () => {
     const space = nanoid()

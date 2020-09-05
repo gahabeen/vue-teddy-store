@@ -3,6 +3,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - store', () => {
   it('setStore() should set a store state', async () => {
     // const store = setStore(null, null, {

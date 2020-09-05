@@ -6,6 +6,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - watchers', () => {
   it('setWatchers() should create a general watcher from function', async () => {
     const space = nanoid()

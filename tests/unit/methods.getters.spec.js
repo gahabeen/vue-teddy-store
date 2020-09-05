@@ -5,6 +5,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - getters', () => {
   it('makeGetters() should create standalone getters based on functions', async () => {
     const space = nanoid()

@@ -5,6 +5,9 @@ import Vue from 'vue'
 
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - installation [vue 2]', () => {
   it('install() should create a Vue.prototype.$teddy', async () => {
     const localVue = createLocalVue()

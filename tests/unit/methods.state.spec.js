@@ -5,6 +5,9 @@ import { nanoid } from 'nanoid'
 import Vue from 'vue'
 Vue.use(VueCompositionApi)
 
+Vue.config.productionTip = false
+Vue.config.devtools = false
+
 describe('methods - state', () => {
   it('makeState() should set provide a reactive (ref) state on raw object', async () => {
     const _state = makeState(null, {
