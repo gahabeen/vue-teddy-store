@@ -135,7 +135,7 @@ export const makeWatchers = (definition, watchers) => {
   return _watchers.reduce((list, watcher) => {
     // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
     const wrapper = (fn, debounceDuration = null) => {
-      const wrapper = function(newState, oldState) {
+      const wrapper = function (newState, oldState) {
         fn.call(this, newState, oldState, equal(newState, oldState))
       }
       if (typeof debounceDuration === 'number') {
@@ -242,6 +242,20 @@ export const run = (definition, actionName, ...args) => {
   }
 }
 
+export const resolve = (definition, getterName, ...args) => {
+  const { store } = useStore(definition)
+  if (getterName in store.getters) {
+    try {
+      return typeof store.getters[getterName] === 'function' ? store.getters[getterName](...args) : store.getters[getterName]
+    } catch (error) {
+      console.error(`Something went wrong with the getter '${getterName}'`)
+      console.error(error)
+    }
+  } else {
+    console.warn(`Couldn't find the getter '${getterName}' to resolve.`)
+  }
+}
+
 export const remove = (definition, path, context) => {
   // if (Vue.config.devtools) {
   //   console.log(`remove()`, { definition, path, context })
@@ -263,7 +277,7 @@ export const get = (definition, path, context, orValue) => {
 }
 
 export const getter = (definition, path, context, orValue) => {
-  return function() {
+  return function () {
     return get(definition, path, context || this, orValue)
   }
 }
@@ -277,7 +291,7 @@ export const set = (definition, path, value, context) => {
 }
 
 export const setter = (definition, path, context) => {
-  return function(value) {
+  return function (value) {
     set(definition, path, value, context || this)
   }
 }
@@ -359,6 +373,7 @@ export const mapMethods = (mapper = (fn) => fn) => {
     exists: mapper(exists),
     reset: mapper(reset),
     run: mapper(run),
+    resolve: mapper(resolve),
     remove: mapper(remove),
     has: mapper(has),
     get: mapper(get),
