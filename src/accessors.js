@@ -1,23 +1,16 @@
-import { isRef, unref } from '@vue/composition-api'
-import { isObject, isValidKey, makeGet, makeHas, makeSet, makeRemove, makePush, makeUnshift } from 'object-string-path'
-import { isComputed, isArray, omit, isValidArrayIndex } from './utils'
+import { isRef, set as VueSet, unref } from '@vue/composition-api'
+import { isObject, isValidKey, makeGet, makeHas, makePush, makeRemove, makeSet, makeUnshift } from 'object-string-path'
+import { isComputed, isValidArrayIndex, omit } from './utils'
 // import * as memoize from './memoize'
 
 function setProp(obj, key, value) {
-  const _obj = unref(obj)
+  // const _obj = unref(obj)
   const isRefed = isRef(obj)
-  if (isArray(_obj) && isValidArrayIndex(key)) {
-    _obj.length = Math.max(_obj.length, key)
+  if (isValidArrayIndex(key) || isValidKey(key)) {
     if (isRefed) {
-      obj.value.splice(key, 1, value)
+      VueSet(obj.value, key, value)
     } else {
-      obj.splice(key, 1, value)
-    }
-  } else if (isValidKey(key) && isObject(_obj)) {
-    if (isRefed) {
-      obj.value[key] = value
-    } else {
-      obj[key] = value
+      VueSet(obj, key, value)
     }
   } else {
     if (isRefed) {
@@ -26,18 +19,34 @@ function setProp(obj, key, value) {
       obj = value
     }
   }
+
+  // if (isArray(_obj) && isValidArrayIndex(key)) {
+  //   _obj.length = Math.max(_obj.length, key)
+  //   if (isRefed) {
+  //     obj.value.splice(key, 1, value)
+  //   } else {
+  //     obj.splice(key, 1, value)
+  //   }
+  // } else if (isValidKey(key) && isObject(_obj)) {
+  //   if (isRefed) {
+  //     obj.value[key] = value
+  //   } else {
+  //     obj[key] = value
+  //   }
+  // } else {
+  //   if (isRefed) {
+  //     obj.value = value
+  //   } else {
+  //     obj = value
+  //   }
+  // }
 }
 
 function getProp(obj, key) {
   if (isObject(obj) || Array.isArray(obj)) {
     if (isValidKey(key)) {
       if (isRef(obj)) {
-        if (key in obj.value) {
-          return obj.value[key]
-        } else {
-          return
-          // return obj.value
-        }
+        return obj.value[key]
       } else {
         return obj[key]
       }
