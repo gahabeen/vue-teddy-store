@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.8
+  * vue-teddy-store v0.2.9
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -125,8 +125,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       .join('.')
   }
 
-  const isArray = Array.isArray;
-
   function isValidArrayIndex(val) {
     const n = parseFloat(String(val));
     return n >= 0 && Math.floor(n) === n && isFinite(val)
@@ -135,21 +133,13 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   // import * as memoize from './memoize'
 
   function setProp(obj, key, value) {
-    const _obj = VueCompositionMethods.unref(obj);
+    // const _obj = unref(obj)
     const isRefed = VueCompositionMethods.isRef(obj);
-    console.log({isRefed, obj, key, value});
-    if (isArray(_obj) && isValidArrayIndex(key)) {
-      _obj.length = Math.max(_obj.length, key);
+    if (isValidArrayIndex(key) || objectStringPath.isValidKey(key)) {
       if (isRefed) {
-        obj.value.splice(key, 1, value);
+        VueCompositionMethods.set(obj.value, key, value);
       } else {
-        obj.splice(key, 1, value);
-      }
-    } else if (objectStringPath.isValidKey(key) && objectStringPath.isObject(_obj)) {
-      if (isRefed) {
-        obj.value[key] = value;
-      } else {
-        obj[key] = value;
+        VueCompositionMethods.set(obj, key, value);
       }
     } else {
       if (isRefed) {
@@ -158,18 +148,34 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
         obj = value;
       }
     }
+
+    // if (isArray(_obj) && isValidArrayIndex(key)) {
+    //   _obj.length = Math.max(_obj.length, key)
+    //   if (isRefed) {
+    //     obj.value.splice(key, 1, value)
+    //   } else {
+    //     obj.splice(key, 1, value)
+    //   }
+    // } else if (isValidKey(key) && isObject(_obj)) {
+    //   if (isRefed) {
+    //     obj.value[key] = value
+    //   } else {
+    //     obj[key] = value
+    //   }
+    // } else {
+    //   if (isRefed) {
+    //     obj.value = value
+    //   } else {
+    //     obj = value
+    //   }
+    // }
   }
 
   function getProp(obj, key) {
     if (objectStringPath.isObject(obj) || Array.isArray(obj)) {
       if (objectStringPath.isValidKey(key)) {
         if (VueCompositionMethods.isRef(obj)) {
-          if (key in obj.value) {
-            return obj.value[key]
-          } else {
-            return
-            // return obj.value
-          }
+          return obj.value[key]
         } else {
           return obj[key]
         }

@@ -1,9 +1,9 @@
 /*!
-  * vue-teddy-store v0.2.8
+  * vue-teddy-store v0.2.9
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, unref, isRef, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, isValidKey } from 'object-string-path';
 import Vue from 'vue';
 import debounce from 'debounce';
@@ -123,8 +123,6 @@ function resolvePath(arr) {
     .join('.')
 }
 
-const isArray = Array.isArray;
-
 function isValidArrayIndex(val) {
   const n = parseFloat(String(val));
   return n >= 0 && Math.floor(n) === n && isFinite(val)
@@ -133,21 +131,13 @@ function isValidArrayIndex(val) {
 // import * as memoize from './memoize'
 
 function setProp(obj, key, value) {
-  const _obj = unref(obj);
+  // const _obj = unref(obj)
   const isRefed = isRef(obj);
-  console.log({isRefed, obj, key, value});
-  if (isArray(_obj) && isValidArrayIndex(key)) {
-    _obj.length = Math.max(_obj.length, key);
+  if (isValidArrayIndex(key) || isValidKey(key)) {
     if (isRefed) {
-      obj.value.splice(key, 1, value);
+      set$2(obj.value, key, value);
     } else {
-      obj.splice(key, 1, value);
-    }
-  } else if (isValidKey(key) && isObject(_obj)) {
-    if (isRefed) {
-      obj.value[key] = value;
-    } else {
-      obj[key] = value;
+      set$2(obj, key, value);
     }
   } else {
     if (isRefed) {
@@ -156,18 +146,34 @@ function setProp(obj, key, value) {
       obj = value;
     }
   }
+
+  // if (isArray(_obj) && isValidArrayIndex(key)) {
+  //   _obj.length = Math.max(_obj.length, key)
+  //   if (isRefed) {
+  //     obj.value.splice(key, 1, value)
+  //   } else {
+  //     obj.splice(key, 1, value)
+  //   }
+  // } else if (isValidKey(key) && isObject(_obj)) {
+  //   if (isRefed) {
+  //     obj.value[key] = value
+  //   } else {
+  //     obj[key] = value
+  //   }
+  // } else {
+  //   if (isRefed) {
+  //     obj.value = value
+  //   } else {
+  //     obj = value
+  //   }
+  // }
 }
 
 function getProp(obj, key) {
   if (isObject(obj) || Array.isArray(obj)) {
     if (isValidKey(key)) {
       if (isRef(obj)) {
-        if (key in obj.value) {
-          return obj.value[key]
-        } else {
-          return
-          // return obj.value
-        }
+        return obj.value[key]
       } else {
         return obj[key]
       }
