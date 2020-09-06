@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.9
+  * vue-teddy-store v0.2.91
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -513,7 +513,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     return _watchers.reduce((list, watcher) => {
       // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
       const wrapper = (fn, debounceDuration = null) => {
-        const wrapper = function(newState, oldState) {
+        const wrapper = function (newState, oldState) {
           fn.call(this, newState, oldState, equal(newState, oldState));
         };
         if (typeof debounceDuration === 'number') {
@@ -620,6 +620,20 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   };
 
+  const resolve = (definition, getterName, ...args) => {
+    const { store } = useStore(definition);
+    if (getterName in store.getters) {
+      try {
+        return typeof store.getters[getterName] === 'function' ? store.getters[getterName](...args) : store.getters[getterName]
+      } catch (error) {
+        console.error(`Something went wrong with the getter '${getterName}'`);
+        console.error(error);
+      }
+    } else {
+      console.warn(`Couldn't find the getter '${getterName}' to resolve.`);
+    }
+  };
+
   const remove$1 = (definition, path, context) => {
     // if (Vue.config.devtools) {
     //   console.log(`remove()`, { definition, path, context })
@@ -641,7 +655,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   };
 
   const getter = (definition, path, context, orValue) => {
-    return function() {
+    return function () {
       return get$1(definition, path, context || this, orValue)
     }
   };
@@ -655,7 +669,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   };
 
   const setter = (definition, path, context) => {
-    return function(value) {
+    return function (value) {
       set$1(definition, path, value, context || this);
     }
   };
@@ -737,6 +751,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       exists: mapper(exists),
       reset: mapper(reset),
       run: mapper(run),
+      resolve: mapper(resolve),
       remove: mapper(remove$1),
       has: mapper(has$1),
       get: mapper(get$1),
@@ -846,6 +861,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     exists: exists,
     reset: reset,
     run: run,
+    resolve: resolve,
     remove: remove$1,
     has: has$1,
     get: get$1,
@@ -896,6 +912,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   exports.push = push$1;
   exports.remove = remove$1;
   exports.reset = reset;
+  exports.resolve = resolve;
   exports.run = run;
   exports.set = set$1;
   exports.setActions = setActions;

@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.2.9
+  * vue-teddy-store v0.2.91
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -511,7 +511,7 @@ const makeWatchers = (definition, watchers) => {
   return _watchers.reduce((list, watcher) => {
     // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
     const wrapper = (fn, debounceDuration = null) => {
-      const wrapper = function(newState, oldState) {
+      const wrapper = function (newState, oldState) {
         fn.call(this, newState, oldState, equal(newState, oldState));
       };
       if (typeof debounceDuration === 'number') {
@@ -618,6 +618,20 @@ const run = (definition, actionName, ...args) => {
   }
 };
 
+const resolve = (definition, getterName, ...args) => {
+  const { store } = useStore(definition);
+  if (getterName in store.getters) {
+    try {
+      return typeof store.getters[getterName] === 'function' ? store.getters[getterName](...args) : store.getters[getterName]
+    } catch (error) {
+      console.error(`Something went wrong with the getter '${getterName}'`);
+      console.error(error);
+    }
+  } else {
+    console.warn(`Couldn't find the getter '${getterName}' to resolve.`);
+  }
+};
+
 const remove$1 = (definition, path, context) => {
   // if (Vue.config.devtools) {
   //   console.log(`remove()`, { definition, path, context })
@@ -639,7 +653,7 @@ const get$1 = (definition, path, context, orValue) => {
 };
 
 const getter = (definition, path, context, orValue) => {
-  return function() {
+  return function () {
     return get$1(definition, path, context || this, orValue)
   }
 };
@@ -653,7 +667,7 @@ const set$1 = (definition, path, value, context) => {
 };
 
 const setter = (definition, path, context) => {
-  return function(value) {
+  return function (value) {
     set$1(definition, path, value, context || this);
   }
 };
@@ -735,6 +749,7 @@ const mapMethods = (mapper = (fn) => fn) => {
     exists: mapper(exists),
     reset: mapper(reset),
     run: mapper(run),
+    resolve: mapper(resolve),
     remove: mapper(remove$1),
     has: mapper(has$1),
     get: mapper(get$1),
@@ -844,6 +859,7 @@ var output = /*#__PURE__*/Object.freeze({
   exists: exists,
   reset: reset,
   run: run,
+  resolve: resolve,
   remove: remove$1,
   has: has$1,
   get: get$1,
@@ -869,4 +885,4 @@ const install = (VueInstance) => {
   VueInstance.prototype.$teddy = output;
 };
 
-export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, push$1 as push, remove$1 as remove, reset, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, unshift$1 as unshift, useStore, useTeddy };
+export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, push$1 as push, remove$1 as remove, reset, resolve, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, unshift$1 as unshift, useStore, useTeddy };
