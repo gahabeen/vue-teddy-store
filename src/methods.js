@@ -6,6 +6,7 @@ import { isObject } from 'object-string-path'
 import * as accessors from './accessors'
 import { Teddies, Teddy, TeddyStore } from './store'
 import * as utils from './utils'
+import fnAnnotate from 'fn-annotate'
 
 const DEFAULT_SPACE_NAME = '$'
 const DEFAULT_STORE_NAME = '@'
@@ -89,7 +90,12 @@ export const makeGetters = (definition, getters) => {
     if (utils.isComputed(getters[key])) {
       acc[key] = getters[key]
     } else if (typeof getters[key] === 'function') {
-      acc[key] = computed(() => getters[key](store))
+      if (fnAnnotate(getters[key]).length > 1) {
+        // if person wants to pass in some data to make the computed property
+        acc[key] = (...args) => computed(() => getters[key](store, ...args))
+      } else {
+        acc[key] = computed(() => getters[key](store))
+      }
     }
     return acc
   }, {})
@@ -135,7 +141,7 @@ export const makeWatchers = (definition, watchers) => {
   return _watchers.reduce((list, watcher) => {
     // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
     const wrapper = (fn, debounceDuration = null) => {
-      const wrapper = function (newState, oldState) {
+      const wrapper = function(newState, oldState) {
         fn.call(this, newState, oldState, equal(newState, oldState))
       }
       if (typeof debounceDuration === 'number') {
@@ -246,7 +252,12 @@ export const resolve = (definition, getterName, ...args) => {
   const { store } = useStore(definition)
   if (getterName in store.getters) {
     try {
-      return typeof store.getters[getterName] === 'function' ? store.getters[getterName](...args) : store.getters[getterName]
+      // Check if arguments are to be expected
+      if (typeof store.getters[getterName] === 'function') {
+        return store.getters[getterName](...args)
+      } else {
+        return store.getters[getterName]
+      }
     } catch (error) {
       console.error(`Something went wrong with the getter '${getterName}'`)
       console.error(error)
@@ -277,7 +288,7 @@ export const get = (definition, path, context, orValue) => {
 }
 
 export const getter = (definition, path, context, orValue) => {
-  return function () {
+  return function() {
     return get(definition, path, context || this, orValue)
   }
 }
@@ -291,7 +302,7 @@ export const set = (definition, path, value, context) => {
 }
 
 export const setter = (definition, path, context) => {
-  return function (value) {
+  return function(value) {
     set(definition, path, value, context || this)
   }
 }

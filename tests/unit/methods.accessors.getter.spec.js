@@ -1,5 +1,5 @@
 import { getter, setStore } from '@/index'
-import VueCompositionApi, { computed } from '@vue/composition-api'
+import VueCompositionApi from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
 import Vue from 'vue'

@@ -39,6 +39,23 @@ describe('methods - getters', () => {
     expect(getters.fullName.value).toBe(fullName(state))
   })
 
+  it('makeGetters() should create getters depending on inputs', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      age: 18,
+    }
+    setState({ space, name }, state)
+
+    const getters = makeGetters(
+      { space, name },
+      {
+        ageLimit: ({ state }, { gap }) => state.age + gap,
+      }
+    )
+    expect(getters.ageLimit({ gap: 3 }).value).toBe(state.age + 3)
+  })
+
   it('setGetters() should set standalone getters based on functions', async () => {
     const space = nanoid()
     const name = nanoid()
