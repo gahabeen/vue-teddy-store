@@ -8,6 +8,7 @@ import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift,
 import Vue from 'vue';
 import debounce from 'debounce';
 import equal from 'fast-deep-equal';
+import fnAnnotate from 'fn-annotate';
 
 const prefix = (space, name) => `teddy:${space}:${name}`;
 var cache = {
@@ -465,7 +466,12 @@ const makeGetters = (definition, getters) => {
     if (isComputed(getters[key])) {
       acc[key] = getters[key];
     } else if (typeof getters[key] === 'function') {
-      acc[key] = computed(() => getters[key](store));
+      if (fnAnnotate(getters[key]).length > 1) {
+        // if person wants to pass in some data to make the computed property
+        acc[key] = (...args) => computed(() => getters[key](store, ...args));
+      } else {
+        acc[key] = computed(() => getters[key](store));
+      }
     }
     return acc
   }, {})
@@ -511,7 +517,7 @@ const makeWatchers = (definition, watchers) => {
   return _watchers.reduce((list, watcher) => {
     // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
     const wrapper = (fn, debounceDuration = null) => {
-      const wrapper = function (newState, oldState) {
+      const wrapper = function(newState, oldState) {
         fn.call(this, newState, oldState, equal(newState, oldState));
       };
       if (typeof debounceDuration === 'number') {
@@ -622,7 +628,12 @@ const resolve = (definition, getterName, ...args) => {
   const { store } = useStore(definition);
   if (getterName in store.getters) {
     try {
-      return typeof store.getters[getterName] === 'function' ? store.getters[getterName](...args) : store.getters[getterName]
+      // Check if arguments are to be expected
+      if (typeof store.getters[getterName] === 'function') {
+        return store.getters[getterName](...args)
+      } else {
+        return store.getters[getterName]
+      }
     } catch (error) {
       console.error(`Something went wrong with the getter '${getterName}'`);
       console.error(error);
@@ -653,7 +664,7 @@ const get$1 = (definition, path, context, orValue) => {
 };
 
 const getter = (definition, path, context, orValue) => {
-  return function () {
+  return function() {
     return get$1(definition, path, context || this, orValue)
   }
 };
@@ -667,7 +678,7 @@ const set$1 = (definition, path, value, context) => {
 };
 
 const setter = (definition, path, context) => {
-  return function (value) {
+  return function(value) {
     set$1(definition, path, value, context || this);
   }
 };

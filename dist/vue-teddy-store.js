@@ -3,13 +3,14 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, debounce, equal) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, debounce, equal, fnAnnotate) {
   'use strict';
 
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
   Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
   debounce = debounce && Object.prototype.hasOwnProperty.call(debounce, 'default') ? debounce['default'] : debounce;
   equal = equal && Object.prototype.hasOwnProperty.call(equal, 'default') ? equal['default'] : equal;
+  fnAnnotate = fnAnnotate && Object.prototype.hasOwnProperty.call(fnAnnotate, 'default') ? fnAnnotate['default'] : fnAnnotate;
 
   const prefix = (space, name) => `teddy:${space}:${name}`;
   var cache = {
@@ -467,7 +468,12 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       if (isComputed(getters[key])) {
         acc[key] = getters[key];
       } else if (typeof getters[key] === 'function') {
-        acc[key] = computed(() => getters[key](store));
+        if (fnAnnotate(getters[key]).length > 1) {
+          // if person wants to pass in some data to make the computed property
+          acc[key] = (...args) => computed(() => getters[key](store, ...args));
+        } else {
+          acc[key] = computed(() => getters[key](store));
+        }
       }
       return acc
     }, {})
@@ -513,7 +519,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     return _watchers.reduce((list, watcher) => {
       // NOTE: Added the wrapper because of some weird reactivity with memoize. To keep an eye on.
       const wrapper = (fn, debounceDuration = null) => {
-        const wrapper = function (newState, oldState) {
+        const wrapper = function(newState, oldState) {
           fn.call(this, newState, oldState, equal(newState, oldState));
         };
         if (typeof debounceDuration === 'number') {
@@ -624,7 +630,12 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     const { store } = useStore(definition);
     if (getterName in store.getters) {
       try {
-        return typeof store.getters[getterName] === 'function' ? store.getters[getterName](...args) : store.getters[getterName]
+        // Check if arguments are to be expected
+        if (typeof store.getters[getterName] === 'function') {
+          return store.getters[getterName](...args)
+        } else {
+          return store.getters[getterName]
+        }
       } catch (error) {
         console.error(`Something went wrong with the getter '${getterName}'`);
         console.error(error);
@@ -655,7 +666,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   };
 
   const getter = (definition, path, context, orValue) => {
-    return function () {
+    return function() {
       return get$1(definition, path, context || this, orValue)
     }
   };
@@ -669,7 +680,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   };
 
   const setter = (definition, path, context) => {
-    return function (value) {
+    return function(value) {
       set$1(definition, path, value, context || this);
     }
   };
@@ -929,4 +940,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath, Vue, debounce, equal));
+}({}, vueCompositionApi, objectStringPath, Vue, debounce, equal, fnAnnotate));

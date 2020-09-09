@@ -1,6 +1,6 @@
 {
   "name": "vue-teddy-store",
-  "version": "0.2.91",
+  "version": "0.3.0",
   "description": "🧸 Next-gen simple store for Vue",
   "author": "Gabin Desserprit <desserprit.gabin@gmail.com>",
   "scripts": {
@@ -21,6 +21,7 @@
     "@vue/composition-api": "^1.0.0-beta.6",
     "debounce": "^1.2.0",
     "fast-safe-stringify": "^2.0.7",
+    "fn-annotate": "^1.2.0",
     "object-hash": "^2.0.3",
     "object-string-path": "^0.1.51",
     "vue": "^2.6.11"
