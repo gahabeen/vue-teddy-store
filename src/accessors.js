@@ -1,7 +1,16 @@
 import { isRef, set as VueSet, unref } from '@vue/composition-api'
-import { isObject, isValidKey, makeGet, makeHas, makePush, makeRemove, makeSet, makeUnshift } from 'object-string-path'
+import { isObject, isValidKey, makeGet, makeHas, makePush, makeRemove, makeSet, makeUnshift, makeInsert } from 'object-string-path'
 import { isComputed, isValidArrayIndex, omit } from './utils'
 // import * as memoize from './memoize'
+
+const notify = (obj = {}) => {
+  const ob = obj.__ob__
+  return () => {
+    if (ob) {
+      ob.dep.notify()
+    }
+  }
+}
 
 function setProp(obj, key, value) {
   // const _obj = unref(obj)
@@ -79,12 +88,17 @@ function hasProp(obj, key) {
 function removeProp(obj, key) {
   const objValue = unref(obj)
   const objIsRef = isRef(obj)
+
+  const _notify = notify(obj)
+
   if (Array.isArray(objValue)) {
     if (objIsRef) {
       obj.value.splice(+key, 1)
     } else {
       obj.splice(+key, 1)
     }
+
+    _notify()
     return true
   } else if (isObject(objValue)) {
     if (objIsRef) {
@@ -92,6 +106,8 @@ function removeProp(obj, key) {
     } else {
       delete obj[key]
     }
+
+    _notify()
     return true
   } else {
     // nothing can be done?
@@ -103,17 +119,22 @@ function removeProp(obj, key) {
 function pushProp(target, value) {
   const targetValue = unref(target)
   const targetIsRef = isRef(target)
+
+  const _notify = notify(target)
+
   if (Array.isArray(targetValue)) {
     if (targetIsRef) {
       // target.value.splice(target.value.length, 0, value)
-      // obj[key].value.push(value)
-      return [...target.value, value]
-      // return target.value.slice(-1)[0]
+      target.value.push(value)
+      _notify()
+      return target.value.slice(-1)[0]
+      // return [...target.value, value]
     } else {
-      // obj[key].push(value)
-      return [...target, value]
+      target.push(value)
+      _notify()
+      // return [...target, value]
       // target.splice(target.length, 0, value)
-      // return target.slice(-1)[0]
+      return target.slice(-1)[0]
     }
   }
 }
@@ -129,6 +150,29 @@ function unshiftProp(target, value) {
     } else {
       // target.splice(0, 0, value);
       target.unshift(value)
+      return target
+    }
+  }
+}
+
+function insertProp(target, index, value) {
+  const targetValue = unref(target)
+  const targetIsRef = isRef(target)
+
+  const _notify = notify(target)
+
+  if (Array.isArray(targetValue)) {
+    if (targetIsRef) {
+      // target.value.splice(target.value.length, 0, value)
+      target.value.splice(index, 0, value)
+      _notify()
+      return target.value
+      // return [...target.value, value]
+    } else {
+      target.splice(index, 0, value)
+      _notify()
+      // return [...target, value]
+      // target.splice(target.length, 0, value)
       return target
     }
   }
@@ -166,7 +210,6 @@ export const teddyRemove = makeRemove({
 })
 
 export const teddyPush = makePush({
-  setProp,
   getProp,
   hasProp,
   pushProp,
@@ -174,10 +217,16 @@ export const teddyPush = makePush({
 })
 
 export const teddyUnshift = makeUnshift({
-  setProp,
   getProp,
   hasProp,
   unshiftProp,
+  afterGetSteps,
+})
+
+export const teddyInsert = makeInsert({
+  getProp,
+  hasProp,
+  insertProp,
   afterGetSteps,
 })
 
@@ -203,15 +252,19 @@ export const remove = makeRemove({
 })
 
 export const push = makePush({
-  setProp,
   getProp,
   hasProp,
   pushProp,
 })
 
 export const unshift = makeUnshift({
-  setProp,
   getProp,
   hasProp,
   unshiftProp,
+})
+
+export const insert = makeInsert({
+  getProp,
+  hasProp,
+  insertProp,
 })

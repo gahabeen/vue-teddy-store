@@ -1,5 +1,5 @@
 import { remove, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+import VueCompositionApi, { watch } from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
 import Vue from 'vue'
@@ -300,5 +300,55 @@ describe('methods - accessors - remove', () => {
 
     await flushPromises()
     expect(store.state.products).toEqual({ 1: {} })
+  })
+
+  it('remove() in array should fire a watchable update', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [{ name: 'honey' }],
+        },
+      }
+    )
+
+    let hit = 0
+
+    watch(store.state, () => {
+      hit = hit + 1
+    })
+
+    await flushPromises()
+    remove({ space, name }, `products.0`)
+    await flushPromises()
+    expect(hit).toEqual(1)
+    expect(store.state.products).toEqual([])
+  })
+
+  it('remove() in object should fire a watchable update', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: { 1: { name: 'honey' } },
+        },
+      }
+    )
+
+    let hit = 0
+
+    watch(store.state, () => {
+      hit = hit + 1
+    })
+
+    await flushPromises()
+    remove({ space, name }, `products.1`)
+    await flushPromises()
+    expect(hit).toEqual(1)
+    expect(store.state.products).toEqual({})
   })
 })

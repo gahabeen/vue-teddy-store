@@ -268,9 +268,6 @@ export const resolve = (definition, getterName, ...args) => {
 }
 
 export const remove = (definition, path, context) => {
-  // if (Vue.config.devtools) {
-  //   console.log(`remove()`, { definition, path, context })
-  // }
   const { space, name } = parseDefinition(definition)
   const store = getStore({ space, name })
   return accessors.teddyRemove(store, path, context)
@@ -308,17 +305,16 @@ export const setter = (definition, path, context) => {
 }
 
 export const push = (definition, path, value, context) => {
-  // if (Vue.config.devtools) {
-  //   console.log(`push()`, { definition, path, value, context })
-  // }
   const store = getStore(definition)
   accessors.teddyPush(store, path, value, context)
 }
 
+export const insert = (definition, path, value, context) => {
+  const store = getStore(definition)
+  accessors.teddyInsert(store, path, value, context)
+}
+
 export const unshift = (definition, path, value, context) => {
-  // if (Vue.config.devtools) {
-  //   console.log(`unshift()`, { definition, path, value, context })
-  // }
   const store = getStore(definition)
   accessors.teddyUnshift(store, path, value, context)
 }
@@ -394,6 +390,7 @@ export const mapMethods = (mapper = (fn) => fn) => {
     sync: mapper(sync),
     push: mapper(push),
     unshift: mapper(unshift),
+    insert: mapper(insert),
   }
 }
 
