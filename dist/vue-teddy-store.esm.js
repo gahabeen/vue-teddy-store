@@ -4,7 +4,7 @@
   * @license MIT
   */
 import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
-import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, isValidKey } from 'object-string-path';
+import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, makeInsert, isValidKey } from 'object-string-path';
 import Vue from 'vue';
 import debounce from 'debounce';
 import equal from 'fast-deep-equal';
@@ -131,6 +131,15 @@ function isValidArrayIndex(val) {
 
 // import * as memoize from './memoize'
 
+const notify = (obj = {}) => {
+  const ob = obj.__ob__;
+  return () => {
+    if (ob) {
+      ob.dep.notify();
+    }
+  }
+};
+
 function setProp(obj, key, value) {
   // const _obj = unref(obj)
   const isRefed = isRef(obj);
@@ -207,12 +216,17 @@ function hasProp(obj, key) {
 function removeProp(obj, key) {
   const objValue = unref(obj);
   const objIsRef = isRef(obj);
+
+  const _notify = notify(obj);
+
   if (Array.isArray(objValue)) {
     if (objIsRef) {
       obj.value.splice(+key, 1);
     } else {
       obj.splice(+key, 1);
     }
+
+    _notify();
     return true
   } else if (isObject(objValue)) {
     if (objIsRef) {
@@ -220,6 +234,8 @@ function removeProp(obj, key) {
     } else {
       delete obj[key];
     }
+
+    _notify();
     return true
   } else {
     // nothing can be done?
@@ -231,17 +247,22 @@ function removeProp(obj, key) {
 function pushProp(target, value) {
   const targetValue = unref(target);
   const targetIsRef = isRef(target);
+
+  const _notify = notify(target);
+
   if (Array.isArray(targetValue)) {
     if (targetIsRef) {
       // target.value.splice(target.value.length, 0, value)
-      // obj[key].value.push(value)
-      return [...target.value, value]
-      // return target.value.slice(-1)[0]
+      target.value.push(value);
+      _notify();
+      return target.value.slice(-1)[0]
+      // return [...target.value, value]
     } else {
-      // obj[key].push(value)
-      return [...target, value]
+      target.push(value);
+      _notify();
+      // return [...target, value]
       // target.splice(target.length, 0, value)
-      // return target.slice(-1)[0]
+      return target.slice(-1)[0]
     }
   }
 }
@@ -257,6 +278,29 @@ function unshiftProp(target, value) {
     } else {
       // target.splice(0, 0, value);
       target.unshift(value);
+      return target
+    }
+  }
+}
+
+function insertProp(target, index, value) {
+  const targetValue = unref(target);
+  const targetIsRef = isRef(target);
+
+  const _notify = notify(target);
+
+  if (Array.isArray(targetValue)) {
+    if (targetIsRef) {
+      // target.value.splice(target.value.length, 0, value)
+      target.value.splice(index, 0, value);
+      _notify();
+      return target.value
+      // return [...target.value, value]
+    } else {
+      target.splice(index, 0, value);
+      _notify();
+      // return [...target, value]
+      // target.splice(target.length, 0, value)
       return target
     }
   }
@@ -294,7 +338,6 @@ const teddyRemove = makeRemove({
 });
 
 const teddyPush = makePush({
-  setProp,
   getProp,
   hasProp,
   pushProp,
@@ -302,10 +345,16 @@ const teddyPush = makePush({
 });
 
 const teddyUnshift = makeUnshift({
-  setProp,
   getProp,
   hasProp,
   unshiftProp,
+  afterGetSteps,
+});
+
+const teddyInsert = makeInsert({
+  getProp,
+  hasProp,
+  insertProp,
   afterGetSteps,
 });
 
@@ -331,17 +380,21 @@ const remove = makeRemove({
 });
 
 const push = makePush({
-  setProp,
   getProp,
   hasProp,
   pushProp,
 });
 
 const unshift = makeUnshift({
-  setProp,
   getProp,
   hasProp,
   unshiftProp,
+});
+
+const insert = makeInsert({
+  getProp,
+  hasProp,
+  insertProp,
 });
 
 var accessors = /*#__PURE__*/Object.freeze({
@@ -352,12 +405,14 @@ var accessors = /*#__PURE__*/Object.freeze({
   teddyRemove: teddyRemove,
   teddyPush: teddyPush,
   teddyUnshift: teddyUnshift,
+  teddyInsert: teddyInsert,
   set: set,
   has: has,
   get: get,
   remove: remove,
   push: push,
-  unshift: unshift
+  unshift: unshift,
+  insert: insert
 });
 
 Vue.use(VueCompositionMethods__default);
@@ -644,9 +699,6 @@ const resolve = (definition, getterName, ...args) => {
 };
 
 const remove$1 = (definition, path, context) => {
-  // if (Vue.config.devtools) {
-  //   console.log(`remove()`, { definition, path, context })
-  // }
   const { space, name } = parseDefinition(definition);
   const store = getStore({ space, name });
   return teddyRemove(store, path, context)
@@ -684,17 +736,16 @@ const setter = (definition, path, context) => {
 };
 
 const push$1 = (definition, path, value, context) => {
-  // if (Vue.config.devtools) {
-  //   console.log(`push()`, { definition, path, value, context })
-  // }
   const store = getStore(definition);
   teddyPush(store, path, value, context);
 };
 
+const insert$1 = (definition, path, value, context) => {
+  const store = getStore(definition);
+  teddyInsert(store, path, value, context);
+};
+
 const unshift$1 = (definition, path, value, context) => {
-  // if (Vue.config.devtools) {
-  //   console.log(`unshift()`, { definition, path, value, context })
-  // }
   const store = getStore(definition);
   teddyUnshift(store, path, value, context);
 };
@@ -770,6 +821,7 @@ const mapMethods = (mapper = (fn) => fn) => {
     sync: mapper(sync$1),
     push: mapper(push$1),
     unshift: mapper(unshift$1),
+    insert: mapper(insert$1),
   }
 };
 
@@ -878,6 +930,7 @@ var output = /*#__PURE__*/Object.freeze({
   set: set$1,
   setter: setter,
   push: push$1,
+  insert: insert$1,
   unshift: unshift$1,
   sync: sync$1,
   setFeature: setFeature,
@@ -896,4 +949,4 @@ const install = (VueInstance) => {
   VueInstance.prototype.$teddy = output;
 };
 
-export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, push$1 as push, remove$1 as remove, reset, resolve, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, unshift$1 as unshift, useStore, useTeddy };
+export { Teddies, Teddy, TeddyStore, accessors, applyState, computed, exists, index as features, get$1 as get, getStore, getTeddy, getter, has$1 as has, injectTeddy, injectTeddyStore, insert$1 as insert, install, makeActions, makeGetters, makeState, makeWatchers, mapMethods, provideTeddyStore, push$1 as push, remove$1 as remove, reset, resolve, run, set$1 as set, setActions, setFeature, setGetters, setState, setStore, setWatchers, setter, sync$1 as sync, unshift$1 as unshift, useStore, useTeddy };

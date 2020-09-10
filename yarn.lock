@@ -8143,10 +8143,10 @@ object-keys@^1.0.11, object-keys@^1.0.12, object-keys@^1.1.1:
   resolved "https://registry.yarnpkg.com/object-keys/-/object-keys-1.1.1.tgz#1c47f272df277f3b1daf061677d9c82e2322c60e"
   integrity sha512-NuAESUOUMrlIXOfHKzD6bpPu3tYt3xvjNdRIQ+FeT0lNb4K8WR70CaDxhuNguS2XG+GjkyMwOzsN5ZktImfhLA==
 
-object-string-path@^0.1.51:
-  version "0.1.51"
-  resolved "https://registry.yarnpkg.com/object-string-path/-/object-string-path-0.1.51.tgz#8f1783d81ad963b74ff9a2737bf09aad03386a3a"
-  integrity sha512-xj+lxKWQalAQvvEQ3eiH/Vi4Ox79+iFNI3J9+0BaYX7FwZLufq5KbmKL+hZJg8HsYud2VYinNLLIOFdj9Iygbg==
+object-string-path@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/object-string-path/-/object-string-path-0.2.0.tgz#a2048c840490847a2c6901230015e1d9a5de0781"
+  integrity sha512-7uAsaF4MUmh+3luH1Ex5TjVyCx84bVh44gbjEd3aJu5krwfyv0EdvxX2OGIPkLXUCqgpputUseZO5fySKQrNEw==
 
 object-visit@^1.0.0:
   version "1.0.1"

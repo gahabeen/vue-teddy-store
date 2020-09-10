@@ -133,6 +133,15 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   // import * as memoize from './memoize'
 
+  const notify = (obj = {}) => {
+    const ob = obj.__ob__;
+    return () => {
+      if (ob) {
+        ob.dep.notify();
+      }
+    }
+  };
+
   function setProp(obj, key, value) {
     // const _obj = unref(obj)
     const isRefed = VueCompositionMethods.isRef(obj);
@@ -209,12 +218,17 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   function removeProp(obj, key) {
     const objValue = VueCompositionMethods.unref(obj);
     const objIsRef = VueCompositionMethods.isRef(obj);
+
+    const _notify = notify(obj);
+
     if (Array.isArray(objValue)) {
       if (objIsRef) {
         obj.value.splice(+key, 1);
       } else {
         obj.splice(+key, 1);
       }
+
+      _notify();
       return true
     } else if (objectStringPath.isObject(objValue)) {
       if (objIsRef) {
@@ -222,6 +236,8 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       } else {
         delete obj[key];
       }
+
+      _notify();
       return true
     } else {
       // nothing can be done?
@@ -233,17 +249,22 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   function pushProp(target, value) {
     const targetValue = VueCompositionMethods.unref(target);
     const targetIsRef = VueCompositionMethods.isRef(target);
+
+    const _notify = notify(target);
+
     if (Array.isArray(targetValue)) {
       if (targetIsRef) {
         // target.value.splice(target.value.length, 0, value)
-        // obj[key].value.push(value)
-        return [...target.value, value]
-        // return target.value.slice(-1)[0]
+        target.value.push(value);
+        _notify();
+        return target.value.slice(-1)[0]
+        // return [...target.value, value]
       } else {
-        // obj[key].push(value)
-        return [...target, value]
+        target.push(value);
+        _notify();
+        // return [...target, value]
         // target.splice(target.length, 0, value)
-        // return target.slice(-1)[0]
+        return target.slice(-1)[0]
       }
     }
   }
@@ -259,6 +280,29 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       } else {
         // target.splice(0, 0, value);
         target.unshift(value);
+        return target
+      }
+    }
+  }
+
+  function insertProp(target, index, value) {
+    const targetValue = VueCompositionMethods.unref(target);
+    const targetIsRef = VueCompositionMethods.isRef(target);
+
+    const _notify = notify(target);
+
+    if (Array.isArray(targetValue)) {
+      if (targetIsRef) {
+        // target.value.splice(target.value.length, 0, value)
+        target.value.splice(index, 0, value);
+        _notify();
+        return target.value
+        // return [...target.value, value]
+      } else {
+        target.splice(index, 0, value);
+        _notify();
+        // return [...target, value]
+        // target.splice(target.length, 0, value)
         return target
       }
     }
@@ -296,7 +340,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   });
 
   const teddyPush = objectStringPath.makePush({
-    setProp,
     getProp,
     hasProp,
     pushProp,
@@ -304,10 +347,16 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   });
 
   const teddyUnshift = objectStringPath.makeUnshift({
-    setProp,
     getProp,
     hasProp,
     unshiftProp,
+    afterGetSteps,
+  });
+
+  const teddyInsert = objectStringPath.makeInsert({
+    getProp,
+    hasProp,
+    insertProp,
     afterGetSteps,
   });
 
@@ -333,17 +382,21 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   });
 
   const push = objectStringPath.makePush({
-    setProp,
     getProp,
     hasProp,
     pushProp,
   });
 
   const unshift = objectStringPath.makeUnshift({
-    setProp,
     getProp,
     hasProp,
     unshiftProp,
+  });
+
+  const insert = objectStringPath.makeInsert({
+    getProp,
+    hasProp,
+    insertProp,
   });
 
   var accessors = /*#__PURE__*/Object.freeze({
@@ -354,12 +407,14 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     teddyRemove: teddyRemove,
     teddyPush: teddyPush,
     teddyUnshift: teddyUnshift,
+    teddyInsert: teddyInsert,
     set: set,
     has: has,
     get: get,
     remove: remove,
     push: push,
-    unshift: unshift
+    unshift: unshift,
+    insert: insert
   });
 
   Vue.use(VueCompositionMethods__default);
@@ -646,9 +701,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   };
 
   const remove$1 = (definition, path, context) => {
-    // if (Vue.config.devtools) {
-    //   console.log(`remove()`, { definition, path, context })
-    // }
     const { space, name } = parseDefinition(definition);
     const store = getStore({ space, name });
     return teddyRemove(store, path, context)
@@ -686,17 +738,16 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   };
 
   const push$1 = (definition, path, value, context) => {
-    // if (Vue.config.devtools) {
-    //   console.log(`push()`, { definition, path, value, context })
-    // }
     const store = getStore(definition);
     teddyPush(store, path, value, context);
   };
 
+  const insert$1 = (definition, path, value, context) => {
+    const store = getStore(definition);
+    teddyInsert(store, path, value, context);
+  };
+
   const unshift$1 = (definition, path, value, context) => {
-    // if (Vue.config.devtools) {
-    //   console.log(`unshift()`, { definition, path, value, context })
-    // }
     const store = getStore(definition);
     teddyUnshift(store, path, value, context);
   };
@@ -772,6 +823,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       sync: mapper(sync$1),
       push: mapper(push$1),
       unshift: mapper(unshift$1),
+      insert: mapper(insert$1),
     }
   };
 
@@ -880,6 +932,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     set: set$1,
     setter: setter,
     push: push$1,
+    insert: insert$1,
     unshift: unshift$1,
     sync: sync$1,
     setFeature: setFeature,
@@ -913,6 +966,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   exports.has = has$1;
   exports.injectTeddy = injectTeddy;
   exports.injectTeddyStore = injectTeddyStore;
+  exports.insert = insert$1;
   exports.install = install;
   exports.makeActions = makeActions;
   exports.makeGetters = makeGetters;
