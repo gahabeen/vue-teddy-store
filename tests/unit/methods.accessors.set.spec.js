@@ -369,4 +369,19 @@ describe('methods - accessors - set', () => {
     await flushPromises()
     expect(hit).toEqual(1)
   })
+
+  it('set() should set a deep path value on unexisting objects', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      products: {},
+    }
+    const store = setStore({ space, name }, { state })
+
+    await flushPromises()
+    set({ space, name }, `products.that.is.really.deep`, null)
+
+    await flushPromises()
+    expect(store.state.products).toHaveProperty('that.is.really.deep', null)
+  })
 })
