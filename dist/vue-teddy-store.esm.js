@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.3.0
+  * vue-teddy-store v0.4.1
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -141,42 +141,24 @@ const notify = (obj = {}) => {
 };
 
 function setProp(obj, key, value) {
-  // const _obj = unref(obj)
   const isRefed = isRef(obj);
   if (isValidArrayIndex(key) || isValidKey(key)) {
     if (isRefed) {
       set$2(obj.value, key, value);
+      return obj.value[key]
     } else {
       set$2(obj, key, value);
+      return obj[key]
     }
   } else {
     if (isRefed) {
       obj.value = value;
+      return obj.value
     } else {
       obj = value;
+      return obj
     }
   }
-
-  // if (isArray(_obj) && isValidArrayIndex(key)) {
-  //   _obj.length = Math.max(_obj.length, key)
-  //   if (isRefed) {
-  //     obj.value.splice(key, 1, value)
-  //   } else {
-  //     obj.splice(key, 1, value)
-  //   }
-  // } else if (isValidKey(key) && isObject(_obj)) {
-  //   if (isRefed) {
-  //     obj.value[key] = value
-  //   } else {
-  //     obj[key] = value
-  //   }
-  // } else {
-  //   if (isRefed) {
-  //     obj.value = value
-  //   } else {
-  //     obj = value
-  //   }
-  // }
 }
 
 function getProp(obj, key) {
