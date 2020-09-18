@@ -1,20 +1,11 @@
-import { nanoid } from 'nanoid'
-import VueCompositionApi from '@vue/composition-api'
-import { mount, createLocalVue } from '@vue/test-utils'
-import flushPromises from 'flush-promises'
-import Vue from 'vue'
-import { Teddies, setFeature, features, setStore } from '@/index'
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
-
 import { prefix } from '@/features/cache'
+import { features, setFeature, setStore, Teddies } from '@/index'
+import { mount } from '@vue/test-utils'
+import flushPromises from 'flush-promises'
+import { nanoid } from 'nanoid'
 
 describe('feature, cache', () => {
   it(`should save the state in cache`, async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
     setStore(
@@ -28,22 +19,15 @@ describe('feature, cache', () => {
 
     setFeature(features.cache)
 
-    mount(
-      {
-        template: '<div></div>',
-      },
-      {
-        localVue,
-      }
-    )
+    mount({
+      template: '<div></div>',
+    })
 
     await flushPromises()
     expect(JSON.parse(window.localStorage.getItem(prefix(space, name)))).toEqual(Teddies.spaces[space].stores[name].state)
   })
 
   it(`should update the state in cache on state update`, async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
     const store = setStore(
@@ -57,14 +41,9 @@ describe('feature, cache', () => {
 
     setFeature(features.cache)
 
-    mount(
-      {
-        template: '<div></div>',
-      },
-      {
-        localVue,
-      }
-    )
+    mount({
+      template: '<div></div>',
+    })
 
     await flushPromises()
 
@@ -75,8 +54,6 @@ describe('feature, cache', () => {
   })
 
   it(`shouldnd't reinstall`, async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
     setStore(
@@ -92,14 +69,9 @@ describe('feature, cache', () => {
     setFeature(features.cache)
     setFeature(features.cache)
 
-    mount(
-      {
-        template: '<div></div>',
-      },
-      {
-        localVue,
-      }
-    )
+    mount({
+      template: '<div></div>',
+    })
 
     await flushPromises()
     expect(JSON.parse(window.localStorage.getItem(prefix(space, name)))).toEqual(Teddies.spaces[space].stores[name].state)

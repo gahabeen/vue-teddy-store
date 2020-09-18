@@ -1,13 +1,13 @@
 import { getStore, setWatchers, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
 
-Vue.use(VueCompositionApi)
 
-Vue.config.productionTip = false
-Vue.config.devtools = false
+
+
+
+
 
 describe('methods - watchers', () => {
   it('setWatchers() should create a general watcher from function', async () => {

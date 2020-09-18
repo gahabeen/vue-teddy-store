@@ -1,12 +1,12 @@
 import { useTeddy, getStore, useStore, exists } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+
 import { nanoid } from 'nanoid'
 
-import Vue from 'vue'
-Vue.use(VueCompositionApi)
 
-Vue.config.productionTip = false
-Vue.config.devtools = false
+
+
+
+
 
 describe('methods - use', () => {
   it('useTeddy() should provide a by-default teddy namespaced instance', async () => {

@@ -1,13 +1,7 @@
 import { remove, setStore } from '@/index'
-import VueCompositionApi, { watch } from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
+import { watch } from 'vue'
 
 describe('methods - accessors - remove', () => {
   it('remove() should remove a simple path', async () => {

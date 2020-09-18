@@ -1,18 +1,10 @@
-import { nanoid } from 'nanoid'
-import VueCompositionApi from '@vue/composition-api'
-import { mount, createLocalVue } from '@vue/test-utils'
+import { features, setFeature, setStore, Teddies } from '@/index'
+import { mount } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
-import Vue from 'vue'
-import { Teddies, setFeature, features, setStore } from '@/index'
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
+import { nanoid } from 'nanoid'
 
 describe('feature, history', () => {
   it(`should save the state in history`, async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
     const store = setStore(
@@ -26,14 +18,9 @@ describe('feature, history', () => {
 
     setFeature(features.history)
 
-    mount(
-      {
-        template: '<div></div>',
-      },
-      {
-        localVue,
-      }
-    )
+    mount({
+      template: '<div></div>',
+    })
 
     await flushPromises()
     store.state.products[0].name = 'BERRIES'
@@ -42,8 +29,6 @@ describe('feature, history', () => {
   })
 
   it(`shouldnd't reinstall`, async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
     const store = setStore(
@@ -63,9 +48,7 @@ describe('feature, history', () => {
       {
         template: '<div></div>',
       },
-      {
-        localVue,
-      }
+      {}
     )
 
     await flushPromises()

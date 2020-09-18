@@ -3,11 +3,9 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, debounce, equal, fnAnnotate) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, debounce, equal, fnAnnotate) {
   'use strict';
 
-  var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
-  Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
   debounce = debounce && Object.prototype.hasOwnProperty.call(debounce, 'default') ? debounce['default'] : debounce;
   equal = equal && Object.prototype.hasOwnProperty.call(equal, 'default') ? equal['default'] : equal;
   fnAnnotate = fnAnnotate && Object.prototype.hasOwnProperty.call(fnAnnotate, 'default') ? fnAnnotate['default'] : fnAnnotate;
@@ -101,24 +99,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     sync: sync
   });
 
-  function isComputed(obj) {
-    if (!objectStringPath.isObject(obj) || (objectStringPath.isObject(obj) && !('value' in obj))) {
-      return false
-    } else {
-      const desc = Object.getOwnPropertyDescriptor(obj, 'value');
-      return typeof desc.get === 'function' // && typeof desc.set === 'function'
-    }
-  }
-
-  function omit(obj, keys = []) {
-    return Object.keys(obj).reduce((acc, key) => {
-      if (!keys.includes(key)) {
-        acc[key] = obj[key];
-      }
-      return acc
-    }, {})
-  }
-
   function resolvePath(arr) {
     return arr
       .filter(Boolean)
@@ -146,10 +126,12 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     const isRefed = VueCompositionMethods.isRef(obj);
     if (isValidArrayIndex(key) || objectStringPath.isValidKey(key)) {
       if (isRefed) {
-        VueCompositionMethods.set(obj.value, key, value);
+        obj.value[key] = value;
+        // VueSet(obj.value, key, value)
         return obj.value[key]
       } else {
-        VueCompositionMethods.set(obj, key, value);
+        obj[key] = value;
+        // VueSet(obj, key, value)
         return obj[key]
       }
     } else {
@@ -187,7 +169,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     } else if (objectStringPath.isValidKey(key)) {
       // Test if computed AND if key we're looking for is in .value,
       // if not continue to check if we're not looking for the key "value" maybe
-      if (isComputed(obj) && obj.value && key in obj.value) {
+      if (VueCompositionMethods.isRef(obj) && key in obj.value) {
         return true
       } else if (obj && key in obj) {
         return true
@@ -214,7 +196,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       return true
     } else if (objectStringPath.isObject(objValue)) {
       if (objIsRef) {
-        obj.value = omit(obj.value, [key]);
+        delete obj.value[key];
       } else {
         delete obj[key];
       }
@@ -399,8 +381,6 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     insert: insert
   });
 
-  Vue.use(VueCompositionMethods__default);
-
   const Teddy = Symbol();
   const TeddyStore = Symbol();
 
@@ -502,7 +482,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     const store = getStore(definition);
     getters = getters || {};
     return Object.keys(getters).reduce((acc, key) => {
-      if (isComputed(getters[key])) {
+      if (VueCompositionMethods.isRef(getters[key])) {
         acc[key] = getters[key];
       } else if (typeof getters[key] === 'function') {
         if (fnAnnotate(getters[key]).length > 1) {
@@ -976,4 +956,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath, Vue, debounce, equal, fnAnnotate));
+}({}, Vue, objectStringPath, debounce, equal, fnAnnotate));

@@ -1,13 +1,7 @@
 import { set, setStore } from '@/index'
-import VueCompositionApi, { watch } from '@vue/composition-api'
+import { watch } from 'vue'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - accessors - set', () => {
   it('set() should set a simple path', async () => {

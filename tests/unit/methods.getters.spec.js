@@ -1,12 +1,12 @@
 import { makeGetters, setState, setGetters } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
 
-Vue.use(VueCompositionApi)
 
-Vue.config.productionTip = false
-Vue.config.devtools = false
+
+
+
+
 
 describe('methods - getters', () => {
   it('makeGetters() should create standalone getters based on functions', async () => {

@@ -1,4 +1,4 @@
-import { unref } from '@vue/composition-api'
+import { unref } from 'vue'
 import getHash from 'object-hash'
 import stringify from 'fast-safe-stringify'
 

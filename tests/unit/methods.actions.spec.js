@@ -1,12 +1,5 @@
 import { makeActions, setState, setActions, run } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - actions', () => {
   it('makeActions() should create standalone actions based on functions', async () => {

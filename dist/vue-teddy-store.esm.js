@@ -3,9 +3,8 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
-import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, makeInsert, isValidKey } from 'object-string-path';
-import Vue from 'vue';
+import { reactive, isRef, unref, ref, provide, inject, computed as computed$1, watch } from 'vue';
+import { makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, makeInsert, isValidKey, isObject } from 'object-string-path';
 import debounce from 'debounce';
 import equal from 'fast-deep-equal';
 import fnAnnotate from 'fn-annotate';
@@ -99,24 +98,6 @@ var index = /*#__PURE__*/Object.freeze({
   sync: sync
 });
 
-function isComputed(obj) {
-  if (!isObject(obj) || (isObject(obj) && !('value' in obj))) {
-    return false
-  } else {
-    const desc = Object.getOwnPropertyDescriptor(obj, 'value');
-    return typeof desc.get === 'function' // && typeof desc.set === 'function'
-  }
-}
-
-function omit(obj, keys = []) {
-  return Object.keys(obj).reduce((acc, key) => {
-    if (!keys.includes(key)) {
-      acc[key] = obj[key];
-    }
-    return acc
-  }, {})
-}
-
 function resolvePath(arr) {
   return arr
     .filter(Boolean)
@@ -144,10 +125,12 @@ function setProp(obj, key, value) {
   const isRefed = isRef(obj);
   if (isValidArrayIndex(key) || isValidKey(key)) {
     if (isRefed) {
-      set$2(obj.value, key, value);
+      obj.value[key] = value;
+      // VueSet(obj.value, key, value)
       return obj.value[key]
     } else {
-      set$2(obj, key, value);
+      obj[key] = value;
+      // VueSet(obj, key, value)
       return obj[key]
     }
   } else {
@@ -185,7 +168,7 @@ function hasProp(obj, key) {
   } else if (isValidKey(key)) {
     // Test if computed AND if key we're looking for is in .value,
     // if not continue to check if we're not looking for the key "value" maybe
-    if (isComputed(obj) && obj.value && key in obj.value) {
+    if (isRef(obj) && key in obj.value) {
       return true
     } else if (obj && key in obj) {
       return true
@@ -212,7 +195,7 @@ function removeProp(obj, key) {
     return true
   } else if (isObject(objValue)) {
     if (objIsRef) {
-      obj.value = omit(obj.value, [key]);
+      delete obj.value[key];
     } else {
       delete obj[key];
     }
@@ -397,8 +380,6 @@ var accessors = /*#__PURE__*/Object.freeze({
   insert: insert
 });
 
-Vue.use(VueCompositionMethods__default);
-
 const Teddy = Symbol();
 const TeddyStore = Symbol();
 
@@ -500,7 +481,7 @@ const makeGetters = (definition, getters) => {
   const store = getStore(definition);
   getters = getters || {};
   return Object.keys(getters).reduce((acc, key) => {
-    if (isComputed(getters[key])) {
+    if (isRef(getters[key])) {
       acc[key] = getters[key];
     } else if (typeof getters[key] === 'function') {
       if (fnAnnotate(getters[key]).length > 1) {

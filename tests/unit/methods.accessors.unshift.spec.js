@@ -1,13 +1,6 @@
-import { unshift, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+import { setStore, unshift } from '@/index'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - accessors - unshift', () => {
   it('unshift() should unshift a simple path', async () => {

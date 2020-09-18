@@ -1,6 +1,6 @@
 import debounce from 'debounce'
-import * as VueCompositionMethods from '@vue/composition-api'
-import { isRef, ref, watch } from '@vue/composition-api'
+import * as VueCompositionMethods from 'vue'
+import { isRef, ref, watch } from 'vue'
 import equal from 'fast-deep-equal'
 import { isObject } from 'object-string-path'
 import * as accessors from './accessors'
@@ -87,7 +87,7 @@ export const makeGetters = (definition, getters) => {
   const store = getStore(definition)
   getters = getters || {}
   return Object.keys(getters).reduce((acc, key) => {
-    if (utils.isComputed(getters[key])) {
+    if (isRef(getters[key])) {
       acc[key] = getters[key]
     } else if (typeof getters[key] === 'function') {
       if (fnAnnotate(getters[key]).length > 1) {

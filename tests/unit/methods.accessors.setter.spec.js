@@ -1,23 +1,19 @@
-import { setter, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+import { setStore, setter } from '@/index'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - accessors - setter', () => {
   it('setter() should provide a setter function to set a simple path', async () => {
     const space = nanoid()
     const name = nanoid()
-    const store = setStore({ space, name }, {
-      state: {
-        products: [{ name: 'berries' }],
-      },
-    })
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [{ name: 'berries' }],
+        },
+      }
+    )
 
     await flushPromises()
     setter({ space, name }, `products`)([])
@@ -27,11 +23,14 @@ describe('methods - accessors - setter', () => {
   it('setter() should provide a setter function to set a path in sub-array', async () => {
     const space = nanoid()
     const name = nanoid()
-    const store = setStore({ space, name }, {
-      state: {
-        products: [{ name: 'berries' }],
-      },
-    })
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [{ name: 'berries' }],
+        },
+      }
+    )
 
     await flushPromises()
     setter({ space, name }, `products.0`)(true)
@@ -41,11 +40,14 @@ describe('methods - accessors - setter', () => {
   it('setter() should provide a setter function to set a path in sub-array object', async () => {
     const space = nanoid()
     const name = nanoid()
-    const store = setStore({ space, name }, {
-      state: {
-        products: [{ name: 'berries' }],
-      },
-    })
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [{ name: 'berries' }],
+        },
+      }
+    )
 
     await flushPromises()
     setter({ space, name }, `products.0.name`)(true)

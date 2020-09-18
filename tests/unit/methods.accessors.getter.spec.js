@@ -1,13 +1,6 @@
 import { getter, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - accessors - getter', () => {
   it('getter() should provide a getter function for a simple path', async () => {

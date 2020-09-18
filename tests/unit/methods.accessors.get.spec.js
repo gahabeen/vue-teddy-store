@@ -1,13 +1,6 @@
 import { get, setStore } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - accessors - get', () => {
   it('get() should access a simple path', async () => {

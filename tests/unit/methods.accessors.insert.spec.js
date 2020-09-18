@@ -1,13 +1,7 @@
 import { insert, setStore } from '@/index'
-import VueCompositionApi, { watch } from '@vue/composition-api'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
+import { watch } from 'vue'
 
 describe.only('methods - accessors - insert', () => {
   it('insert() should insert a simple path', async () => {
@@ -92,12 +86,9 @@ describe.only('methods - accessors - insert', () => {
 
     let hit = 0
 
-    watch(
-      store.state,
-      () => {
-        hit = hit + 1
-      }
-    )
+    watch(store.state, () => {
+      hit = hit + 1
+    })
 
     await flushPromises()
     // store._state.value = {}

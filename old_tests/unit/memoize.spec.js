@@ -1,14 +1,7 @@
 import { accessors } from '@/index'
-import { getDecorated, get } from '@/memoize'
-import VueCompositionApi from '@vue/composition-api'
+import { get, getDecorated } from '@/memoize'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('memoize', () => {
   it('getDecorated() should provide a cached value on n+1 calls', async () => {

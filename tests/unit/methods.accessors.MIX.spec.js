@@ -1,13 +1,7 @@
 import { getter, setStore, useStore } from '@/index'
-import VueCompositionApi, { computed } from '@vue/composition-api'
+import { computed } from 'vue'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - accessors - MIX', () => {
   it('getter() on unexistent simple prop should fire', async () => {

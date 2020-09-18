@@ -1,12 +1,6 @@
-import { Teddies, setState, makeState } from '@/index'
-import VueCompositionApi, { ref } from '@vue/composition-api'
+import { makeState, setState, Teddies } from '@/index'
 import { nanoid } from 'nanoid'
-
-import Vue from 'vue'
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
+import { ref } from 'vue'
 
 describe('methods - state', () => {
   it('makeState() should set provide a reactive (ref) state on raw object', async () => {

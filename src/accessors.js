@@ -1,6 +1,6 @@
-import { isRef, set as VueSet, unref } from '@vue/composition-api'
+import { isRef, unref } from 'vue'
 import { isObject, isValidKey, makeGet, makeHas, makePush, makeRemove, makeSet, makeUnshift, makeInsert } from 'object-string-path'
-import { isComputed, isValidArrayIndex, omit } from './utils'
+import { isValidArrayIndex } from './utils'
 // import * as memoize from './memoize'
 
 const notify = (obj = {}) => {
@@ -16,10 +16,12 @@ function setProp(obj, key, value) {
   const isRefed = isRef(obj)
   if (isValidArrayIndex(key) || isValidKey(key)) {
     if (isRefed) {
-      VueSet(obj.value, key, value)
+      obj.value[key] = value
+      // VueSet(obj.value, key, value)
       return obj.value[key]
     } else {
-      VueSet(obj, key, value)
+      obj[key] = value
+      // VueSet(obj, key, value)
       return obj[key]
     }
   } else {
@@ -57,7 +59,7 @@ function hasProp(obj, key) {
   } else if (isValidKey(key)) {
     // Test if computed AND if key we're looking for is in .value,
     // if not continue to check if we're not looking for the key "value" maybe
-    if (isComputed(obj) && obj.value && key in obj.value) {
+    if (isRef(obj) && key in obj.value) {
       return true
     } else if (obj && key in obj) {
       return true
@@ -84,7 +86,7 @@ function removeProp(obj, key) {
     return true
   } else if (isObject(objValue)) {
     if (objIsRef) {
-      obj.value = omit(obj.value, [key])
+      delete obj.value[key]
     } else {
       delete obj[key]
     }

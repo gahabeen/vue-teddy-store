@@ -1,12 +1,12 @@
 import { setGetters, resolve, setState } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
+
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
 
-Vue.use(VueCompositionApi)
 
-Vue.config.productionTip = false
-Vue.config.devtools = false
+
+
+
+
 
 describe('methods - resolve', () => {
   it('resolve() should retrieve a simple getter', async () => {

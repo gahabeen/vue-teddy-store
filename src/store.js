@@ -1,7 +1,3 @@
-import VueCompositionApi from '@vue/composition-api'
-import Vue from 'vue'
-Vue.use(VueCompositionApi)
-
 export const Teddy = Symbol()
 export const TeddyStore = Symbol()
 

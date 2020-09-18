@@ -1,26 +1,20 @@
 import { setStore, sync } from '@/index'
-import VueCompositionApi from '@vue/composition-api'
-import { createLocalVue, mount } from '@vue/test-utils'
+import { mount } from '@vue/test-utils'
 import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
-import Vue from 'vue'
-
-Vue.use(VueCompositionApi)
-
-Vue.config.productionTip = false
-Vue.config.devtools = false
 
 describe('methods - accessors - sync [vue 2]', () => {
   it('sync() should provide a sync function to set a simple path', async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
-    const store = setStore({ space, name }, {
-      state: {
-        products: [{ name: 'berries' }],
-      },
-    })
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [{ name: 'berries' }],
+        },
+      }
+    )
 
     mount(
       {
@@ -32,9 +26,7 @@ describe('methods - accessors - sync [vue 2]', () => {
           this.products = []
         },
       },
-      {
-        localVue,
-      }
+      {}
     )
 
     await flushPromises()
@@ -42,15 +34,16 @@ describe('methods - accessors - sync [vue 2]', () => {
   })
 
   it('sync() should provide a sync function to set a path in sub-array', async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
-    const store = setStore({ space, name }, {
-      state: {
-        products: [{ name: 'berries' }],
-      },
-    })
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [{ name: 'berries' }],
+        },
+      }
+    )
 
     mount(
       {
@@ -62,9 +55,7 @@ describe('methods - accessors - sync [vue 2]', () => {
           this.firstProduct = true
         },
       },
-      {
-        localVue,
-      }
+      {}
     )
 
     await flushPromises()
@@ -72,15 +63,16 @@ describe('methods - accessors - sync [vue 2]', () => {
   })
 
   it('sync() should provide a sync function to set a path in sub-array object', async () => {
-    const localVue = createLocalVue()
-
     const space = nanoid()
     const name = nanoid()
-    const store = setStore({ space, name }, {
-      state: {
-        products: [{ name: 'berries' }],
-      },
-    })
+    const store = setStore(
+      { space, name },
+      {
+        state: {
+          products: [{ name: 'berries' }],
+        },
+      }
+    )
 
     mount(
       {
@@ -92,9 +84,7 @@ describe('methods - accessors - sync [vue 2]', () => {
           this.name = true
         },
       },
-      {
-        localVue,
-      }
+      {}
     )
 
     await flushPromises()
