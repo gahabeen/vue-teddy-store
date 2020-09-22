@@ -349,17 +349,25 @@ export const sync = (definition, path, context) => {
   }
 }
 
-export const setFeature = (feature = {}) => {
+export const setFeature = (feature = {}, { spaces = { '*': '*' } } = {}) => {
   if (typeof feature.teddy === 'function') {
     feature.teddy(Teddies)
   }
-  for (const space of Object.keys(Teddies.spaces || {})) {
+  const targettedSpaces = '*' in spaces ? Object.keys(Teddies.spaces || {}) : Object.keys(spaces)
+  for (const space of targettedSpaces) {
     if (typeof feature.space === 'function') {
       feature.space(space)
     }
-    for (const name of Object.keys(Teddies.spaces[space].stores || {})) {
-      if (typeof feature.store === 'function') {
-        feature.store(space, name)
+
+    if (space in Teddies.spaces) {
+      const spaceStores = Object.keys(Teddies.spaces[space].stores || {})
+      const targettedStores = '*' in spaces && spaces['*'] === '*' ? spaceStores : spaces[space]
+      if (Array.isArray(targettedStores)) {
+        for (const name of targettedStores) {
+          if (typeof feature.store === 'function') {
+            feature.store(space, name)
+          }
+        }
       }
     }
   }

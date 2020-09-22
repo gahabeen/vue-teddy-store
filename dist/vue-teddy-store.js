@@ -764,17 +764,22 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   };
 
-  const setFeature = (feature = {}) => {
+  const setFeature = (feature = {}, { spaces = { $: '*' } } = {}) => {
     if (typeof feature.teddy === 'function') {
       feature.teddy(Teddies);
     }
-    for (const space of Object.keys(Teddies.spaces || {})) {
+    const targettedSpaces = Object.keys(spaces);
+    for (const space of targettedSpaces) {
       if (typeof feature.space === 'function') {
         feature.space(space);
       }
-      for (const name of Object.keys(Teddies.spaces[space].stores || {})) {
-        if (typeof feature.store === 'function') {
-          feature.store(space, name);
+
+      const targettedStores = spaces[space] === '*' ? Object.keys(Teddies.spaces[space].stores || {}) : spaces[space];
+      if (Array.isArray(targettedStores)) {
+        for (const name of targettedStores) {
+          if (typeof feature.store === 'function') {
+            feature.store(space, name);
+          }
         }
       }
     }
