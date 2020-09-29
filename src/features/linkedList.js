@@ -1,33 +1,38 @@
-import { getStore, setWatchers } from './../output'
+import { getStore, setActions, get } from './../output'
 
-export const prefix = (space, name) => `teddy:${space}:${name}`
 export default {
   store(space, name) {
     const store = getStore({ space, name })
-    if (store.features.cache) {
+    if (store.features.linkedList) {
+      // avoids resetting the same feature twice
       return
     }
 
-    /* istanbul ignore next */
-    const localStorage = window.localStorage || global.localStorage || {}
-    /* istanbul ignore next */
-    if (localStorage) {
-      // Fetched saved state when exists
-      const cached = localStorage.getItem(prefix(space, name))
-      if (cached) store.state = JSON.parse(cached)
-      // Watch for mutations, save them
-      setWatchers(
-        { space, name },
-        {
-          handler(newState) {
-            localStorage.setItem(prefix(space, name), JSON.stringify(newState))
-          },
-          immediate: true,
-          deep: true,
-        }
-      )
+    /**
+     *  const linkedlist = $teddy.run('formsPages', 'linkedlist', { path: '', variables: { }, idPaty})
+     * linkedlist.add()
+     * linkedlist.remove()
+     * linkedlist.update()
+     */
 
-      store.features.cache = true
-    }
+    setActions(
+      { space, name },
+      {
+        linkedlist(_, { path = '', variables = {}, idPath = 'id', nextPath = 'next', sortPredicate = (a, b) => 1 } = {}) {
+          let _list = get(path, variables)
+          if (!Array.isArray(_list) && _list && typeof _list === 'object') {
+            _list = Array.values(_list)
+          }
+
+          const sortedList = []
+
+          return {
+            list: sortedList
+          }
+        },
+      }
+    )
+
+    store.features.linkedList = true
   },
 }

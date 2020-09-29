@@ -7,6 +7,8 @@ import * as accessors from './accessors'
 import { Teddies, Teddy, TeddyStore } from './store'
 import * as utils from './utils'
 import fnAnnotate from 'fn-annotate'
+import getHash from 'object-hash'
+import stringify from 'fast-safe-stringify'
 
 const DEFAULT_SPACE_NAME = '$'
 const DEFAULT_STORE_NAME = '@'
@@ -92,7 +94,16 @@ export const makeGetters = (definition, getters) => {
     } else if (typeof getters[key] === 'function') {
       if (fnAnnotate(getters[key]).length > 1) {
         // if person wants to pass in some data to make the computed property
-        acc[key] = (...args) => computed(() => getters[key](store, ...args))
+        acc[key] = function(...args) {
+          const argsHash = getHash(stringify(args))
+          const ref = `__${key}_${argsHash}`
+          if (ref in this) {
+            return this[ref]
+          } else {
+            this[ref] = computed(() => getters[key](store, ...args))
+            return this[ref]
+          }
+        }
       } else {
         acc[key] = computed(() => getters[key](store))
       }

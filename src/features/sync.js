@@ -5,6 +5,7 @@ export default {
   store(space, name) {
     const store = getStore({ space, name })
     if (store.features.sync) {
+      // avoids resetting the same feature twice
       return
     } else {
       store.features.sync = {}

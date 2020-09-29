@@ -1,5 +1,6 @@
 import { makeGetters, setState, setGetters } from '@/index'
 import VueCompositionApi from '@vue/composition-api'
+import flushPromises from 'flush-promises'
 import { nanoid } from 'nanoid'
 import Vue from 'vue'
 
@@ -84,5 +85,65 @@ describe('methods - getters', () => {
       }
     )
     expect(store.getters.fullName.value).toBe(fullName(state))
+  })
+
+  it('setGetters() should set getters in cache when based on parameters', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      items: {
+        1: 'on',
+        2: 'two',
+      },
+    }
+    setState({ space, name }, state)
+    const store = setGetters(
+      { space, name },
+      {
+        item: ({ state }, { id }) => state[id],
+      }
+    )
+
+    store.getters.item({ id: 1 })
+    store.getters.item({ id: 2 })
+    store.getters.item({ id: 1 })
+    store.getters.item({ id: 1 })
+    store.getters.item({ id: 2 })
+    store.getters.item({ id: 2 })
+    await flushPromises()
+    expect(Object.keys(store.getters).length).toBe(3)
+  })
+
+  it('setGetters() should set getters in cache when based on several parameters', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      items: [
+        {
+          id: 1,
+          name: 'one',
+        },
+        {
+          id: 2,
+          name: 'two',
+        },
+      ],
+    }
+    setState({ space, name }, state)
+    const store = setGetters(
+      { space, name },
+      {
+        item: ({ state }, { id, name }) => state.items.find((item) => item.id === id && item.name === name),
+      }
+    )
+
+    store.getters.item({ id: 1, name: 'one' })
+    store.getters.item({ id: 2, name: 'two' })
+    store.getters.item({ id: 1, name: 'one' })
+    store.getters.item({ id: 1, name: 'one' })
+    store.getters.item({ id: 1, name: 'one' })
+    store.getters.item({ id: 2, name: 'two' })
+    await flushPromises()
+    expect(Object.keys(store.getters).length).toBe(3)
   })
 })
