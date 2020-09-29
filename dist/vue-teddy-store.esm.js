@@ -9,12 +9,15 @@ import Vue from 'vue';
 import debounce from 'debounce';
 import equal from 'fast-deep-equal';
 import fnAnnotate from 'fn-annotate';
+import getHash from 'object-hash';
+import stringify from 'fast-safe-stringify';
 
 const prefix = (space, name) => `teddy:${space}:${name}`;
 var cache = {
   store(space, name) {
     const store = getStore({ space, name });
     if (store.features.cache) {
+      // avoids resetting the same feature twice
       return
     }
 
@@ -46,6 +49,7 @@ var history = {
   store(space, name) {
     const store = getStore({ space, name });
     if (store.features.history) {
+      // avoids resetting the same feature twice
       return
     } else {
       store.features.history = {};
@@ -74,6 +78,7 @@ var sync = {
   store(space, name) {
     const store = getStore({ space, name });
     if (store.features.sync) {
+      // avoids resetting the same feature twice
       return
     } else {
       store.features.sync = {};
@@ -505,7 +510,16 @@ const makeGetters = (definition, getters) => {
     } else if (typeof getters[key] === 'function') {
       if (fnAnnotate(getters[key]).length > 1) {
         // if person wants to pass in some data to make the computed property
-        acc[key] = (...args) => computed(() => getters[key](store, ...args));
+        acc[key] = function(...args) {
+          const argsHash = getHash(stringify(args));
+          const ref = `__${key}_${argsHash}`;
+          if (ref in this) {
+            return this[ref]
+          } else {
+            this[ref] = computed(() => getters[key](store, ...args));
+            return this[ref]
+          }
+        };
       } else {
         acc[key] = computed(() => getters[key](store));
       }
@@ -762,21 +776,24 @@ const sync$1 = (definition, path, context) => {
   }
 };
 
-const setFeature = (feature = {}, { spaces = { $: '*' } } = {}) => {
+const setFeature = (feature = {}, { spaces = { '*': '*' } } = {}) => {
   if (typeof feature.teddy === 'function') {
     feature.teddy(Teddies);
   }
-  const targettedSpaces = Object.keys(spaces);
+  const targettedSpaces = '*' in spaces ? Object.keys(Teddies.spaces || {}) : Object.keys(spaces);
   for (const space of targettedSpaces) {
     if (typeof feature.space === 'function') {
       feature.space(space);
     }
 
-    const targettedStores = spaces[space] === '*' ? Object.keys(Teddies.spaces[space].stores || {}) : spaces[space];
-    if (Array.isArray(targettedStores)) {
-      for (const name of targettedStores) {
-        if (typeof feature.store === 'function') {
-          feature.store(space, name);
+    if (space in Teddies.spaces) {
+      const spaceStores = Object.keys(Teddies.spaces[space].stores || {});
+      const targettedStores = '*' in spaces && spaces['*'] === '*' ? spaceStores : spaces[space];
+      if (Array.isArray(targettedStores)) {
+        for (const name of targettedStores) {
+          if (typeof feature.store === 'function') {
+            feature.store(space, name);
+          }
         }
       }
     }

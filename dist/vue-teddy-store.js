@@ -3,7 +3,7 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, debounce, equal, fnAnnotate) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, debounce, equal, fnAnnotate, getHash, stringify) {
   'use strict';
 
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
@@ -11,12 +11,15 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
   debounce = debounce && Object.prototype.hasOwnProperty.call(debounce, 'default') ? debounce['default'] : debounce;
   equal = equal && Object.prototype.hasOwnProperty.call(equal, 'default') ? equal['default'] : equal;
   fnAnnotate = fnAnnotate && Object.prototype.hasOwnProperty.call(fnAnnotate, 'default') ? fnAnnotate['default'] : fnAnnotate;
+  getHash = getHash && Object.prototype.hasOwnProperty.call(getHash, 'default') ? getHash['default'] : getHash;
+  stringify = stringify && Object.prototype.hasOwnProperty.call(stringify, 'default') ? stringify['default'] : stringify;
 
   const prefix = (space, name) => `teddy:${space}:${name}`;
   var cache = {
     store(space, name) {
       const store = getStore({ space, name });
       if (store.features.cache) {
+        // avoids resetting the same feature twice
         return
       }
 
@@ -48,6 +51,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     store(space, name) {
       const store = getStore({ space, name });
       if (store.features.history) {
+        // avoids resetting the same feature twice
         return
       } else {
         store.features.history = {};
@@ -76,6 +80,7 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     store(space, name) {
       const store = getStore({ space, name });
       if (store.features.sync) {
+        // avoids resetting the same feature twice
         return
       } else {
         store.features.sync = {};
@@ -507,7 +512,16 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
       } else if (typeof getters[key] === 'function') {
         if (fnAnnotate(getters[key]).length > 1) {
           // if person wants to pass in some data to make the computed property
-          acc[key] = (...args) => computed(() => getters[key](store, ...args));
+          acc[key] = function(...args) {
+            const argsHash = getHash(stringify(args));
+            const ref = `__${key}_${argsHash}`;
+            if (ref in this) {
+              return this[ref]
+            } else {
+              this[ref] = computed(() => getters[key](store, ...args));
+              return this[ref]
+            }
+          };
         } else {
           acc[key] = computed(() => getters[key](store));
         }
@@ -764,21 +778,24 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
     }
   };
 
-  const setFeature = (feature = {}, { spaces = { $: '*' } } = {}) => {
+  const setFeature = (feature = {}, { spaces = { '*': '*' } } = {}) => {
     if (typeof feature.teddy === 'function') {
       feature.teddy(Teddies);
     }
-    const targettedSpaces = Object.keys(spaces);
+    const targettedSpaces = '*' in spaces ? Object.keys(Teddies.spaces || {}) : Object.keys(spaces);
     for (const space of targettedSpaces) {
       if (typeof feature.space === 'function') {
         feature.space(space);
       }
 
-      const targettedStores = spaces[space] === '*' ? Object.keys(Teddies.spaces[space].stores || {}) : spaces[space];
-      if (Array.isArray(targettedStores)) {
-        for (const name of targettedStores) {
-          if (typeof feature.store === 'function') {
-            feature.store(space, name);
+      if (space in Teddies.spaces) {
+        const spaceStores = Object.keys(Teddies.spaces[space].stores || {});
+        const targettedStores = '*' in spaces && spaces['*'] === '*' ? spaceStores : spaces[space];
+        if (Array.isArray(targettedStores)) {
+          for (const name of targettedStores) {
+            if (typeof feature.store === 'function') {
+              feature.store(space, name);
+            }
           }
         }
       }
@@ -981,4 +998,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath, Vue, debounce, equal, fnAnnotate));
+}({}, vueCompositionApi, objectStringPath, Vue, debounce, equal, fnAnnotate, getHash, stringify));
