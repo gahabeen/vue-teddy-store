@@ -97,12 +97,10 @@ export const makeGetters = (definition, getters) => {
         acc[key] = function(...args) {
           const argsHash = getHash(stringify(args))
           const ref = `__${key}_${argsHash}`
-          if (ref in this) {
-            return this[ref]
-          } else {
+          if (!(ref in this)) {
             this[ref] = computed(() => getters[key](store, ...args))
-            return this[ref]
           }
+          return this[ref]
         }
       } else {
         acc[key] = computed(() => getters[key](store))

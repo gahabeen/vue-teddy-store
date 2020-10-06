@@ -277,6 +277,21 @@ describe('methods - accessors - get', () => {
     expect(value).toEqual(['berries'])
   })
 
+  it('get() should get a spread path in sub-object path via a variable', async () => {
+    const space = nanoid()
+    const name = nanoid()
+    const state = {
+      products: { 1: { name: 'berries' } },
+    }
+    setStore({ space, name }, { state })
+
+    await flushPromises()
+    const value = get({ space, name }, `products..name={name}`, { name: 'berries' })
+
+    await flushPromises()
+    expect(value).toEqual({ name: 'berries' })
+  })
+
   it('get() should get a spread (with star) path in sub-object path', async () => {
     const space = nanoid()
     const name = nanoid()
