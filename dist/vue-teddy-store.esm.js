@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.4.1
+  * vue-teddy-store v0.5.1
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -513,12 +513,10 @@ const makeGetters = (definition, getters) => {
         acc[key] = function(...args) {
           const argsHash = getHash(stringify(args));
           const ref = `__${key}_${argsHash}`;
-          if (ref in this) {
-            return this[ref]
-          } else {
+          if (!(ref in this)) {
             this[ref] = computed(() => getters[key](store, ...args));
-            return this[ref]
           }
+          return this[ref]
         };
       } else {
         acc[key] = computed(() => getters[key](store));

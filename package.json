@@ -1,6 +1,6 @@
 {
   "name": "vue-teddy-store",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "🧸 Next-gen simple store for Vue",
   "author": "Gabin Desserprit <desserprit.gabin@gmail.com>",
   "scripts": {
@@ -10,7 +10,7 @@
     "lint": "vue-cli-service lint",
     "dev": "rollup -c rollup.config.js --watch",
     "prepublish": "npm run build",
-    "test:unit:watch": "vue-cli-service test:unit --watch",
+    "test": "vue-cli-service test:unit --watch",
     "example": "node examples/run.js"
   },
   "main": "dist/vue-teddy-store.esm.js",
@@ -23,7 +23,7 @@
     "fast-safe-stringify": "^2.0.7",
     "fn-annotate": "^1.2.0",
     "object-hash": "^2.0.3",
-    "object-string-path": "^0.2.0",
+    "object-string-path": "0.2.2",
     "vue": "^2.6.11"
   },
   "devDependencies": {
