@@ -1,4 +1,5 @@
 import { getStore, setWatchers } from './../output'
+import debounce from 'debounce'
 
 export const prefix = (space, name) => `teddy:${space}:${name}`
 export default {
@@ -20,9 +21,9 @@ export default {
       setWatchers(
         { space, name },
         {
-          handler(newState) {
+          handler: debounce((newState) => {
             localStorage.setItem(prefix(space, name), JSON.stringify(newState))
-          },
+          }, 200),
           immediate: true,
           deep: true,
         }
