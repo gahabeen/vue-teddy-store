@@ -1,5 +1,6 @@
 import { getStore } from './../output'
 import { prefix } from './cache'
+import debounce from 'debounce'
 
 export default {
   store(space, name) {
@@ -13,11 +14,14 @@ export default {
 
     /* istanbul ignore next */
     if (window) {
-      window.addEventListener('storage', (e) => {
-        if (e.key === prefix(space, name)) {
-          store.state = { ...store.state, ...JSON.parse(e.newValue) }
-        }
-      })
+      window.addEventListener(
+        'storage',
+        debounce((e) => {
+          if (e.key === prefix(space, name)) {
+            store.state = { ...store.state, ...JSON.parse(e.newValue) }
+          }
+        }, 200)
+      )
     }
 
     store.features.sync.installed = true
