@@ -1,10 +1,10 @@
 /*!
-  * vue-teddy-store v0.5.21
+  * vue-teddy-store v0.5.22
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import debounce from 'debounce';
+import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, makeInsert, isValidKey } from 'object-string-path';
 import Vue from 'vue';
 import equal from 'fast-deep-equal';
@@ -32,9 +32,9 @@ var cache = {
       setWatchers(
         { space, name },
         {
-          handler(newState) {
+          handler: debounce((newState) => {
             localStorage.setItem(prefix(space, name), JSON.stringify(newState));
-          },
+          }, 200),
           immediate: true,
           deep: true,
         }

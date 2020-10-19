@@ -1,13 +1,13 @@
 /*!
-  * vue-teddy-store v0.5.21
+  * vue-teddy-store v0.5.22
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, debounce, objectStringPath, Vue, equal, fnAnnotate, getHash, stringify) {
+var VueTeddyStore = (function (exports, debounce, VueCompositionMethods, objectStringPath, Vue, equal, fnAnnotate, getHash, stringify) {
   'use strict';
 
-  var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
   debounce = debounce && Object.prototype.hasOwnProperty.call(debounce, 'default') ? debounce['default'] : debounce;
+  var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
   Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
   equal = equal && Object.prototype.hasOwnProperty.call(equal, 'default') ? equal['default'] : equal;
   fnAnnotate = fnAnnotate && Object.prototype.hasOwnProperty.call(fnAnnotate, 'default') ? fnAnnotate['default'] : fnAnnotate;
@@ -34,9 +34,9 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, debounce, objectS
         setWatchers(
           { space, name },
           {
-            handler(newState) {
+            handler: debounce((newState) => {
               localStorage.setItem(prefix(space, name), JSON.stringify(newState));
-            },
+            }, 200),
             immediate: true,
             deep: true,
           }
@@ -999,4 +999,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, debounce, objectS
 
   return exports;
 
-}({}, vueCompositionApi, debounce, objectStringPath, Vue, equal, fnAnnotate, getHash, stringify));
+}({}, debounce, vueCompositionApi, objectStringPath, Vue, equal, fnAnnotate, getHash, stringify));
