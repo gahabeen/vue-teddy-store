@@ -4,9 +4,9 @@
   * @license MIT
   */
 import VueCompositionMethods__default, { reactive, isRef, set as set$2, unref, ref, provide, inject, computed as computed$1, watch } from '@vue/composition-api';
+import debounce from 'debounce';
 import { isObject, makeSet, makeHas, makeGet, makeRemove, makePush, makeUnshift, makeInsert, isValidKey } from 'object-string-path';
 import Vue from 'vue';
-import debounce from 'debounce';
 import equal from 'fast-deep-equal';
 import fnAnnotate from 'fn-annotate';
 import getHash from 'object-hash';
@@ -86,11 +86,14 @@ var sync = {
 
     /* istanbul ignore next */
     if (window) {
-      window.addEventListener('storage', (e) => {
-        if (e.key === prefix(space, name)) {
-          store.state = { ...store.state, ...JSON.parse(e.newValue) };
-        }
-      });
+      window.addEventListener(
+        'storage',
+        debounce((e) => {
+          if (e.key === prefix(space, name)) {
+            store.state = { ...store.state, ...JSON.parse(e.newValue) };
+          }
+        }, 200)
+      );
     }
 
     store.features.sync.installed = true;

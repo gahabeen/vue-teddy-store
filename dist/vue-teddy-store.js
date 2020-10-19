@@ -3,12 +3,12 @@
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
-var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath, Vue, debounce, equal, fnAnnotate, getHash, stringify) {
+var VueTeddyStore = (function (exports, VueCompositionMethods, debounce, objectStringPath, Vue, equal, fnAnnotate, getHash, stringify) {
   'use strict';
 
   var VueCompositionMethods__default = 'default' in VueCompositionMethods ? VueCompositionMethods['default'] : VueCompositionMethods;
-  Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
   debounce = debounce && Object.prototype.hasOwnProperty.call(debounce, 'default') ? debounce['default'] : debounce;
+  Vue = Vue && Object.prototype.hasOwnProperty.call(Vue, 'default') ? Vue['default'] : Vue;
   equal = equal && Object.prototype.hasOwnProperty.call(equal, 'default') ? equal['default'] : equal;
   fnAnnotate = fnAnnotate && Object.prototype.hasOwnProperty.call(fnAnnotate, 'default') ? fnAnnotate['default'] : fnAnnotate;
   getHash = getHash && Object.prototype.hasOwnProperty.call(getHash, 'default') ? getHash['default'] : getHash;
@@ -88,11 +88,14 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
       /* istanbul ignore next */
       if (window) {
-        window.addEventListener('storage', (e) => {
-          if (e.key === prefix(space, name)) {
-            store.state = { ...store.state, ...JSON.parse(e.newValue) };
-          }
-        });
+        window.addEventListener(
+          'storage',
+          debounce((e) => {
+            if (e.key === prefix(space, name)) {
+              store.state = { ...store.state, ...JSON.parse(e.newValue) };
+            }
+          }, 200)
+        );
       }
 
       store.features.sync.installed = true;
@@ -996,4 +999,4 @@ var VueTeddyStore = (function (exports, VueCompositionMethods, objectStringPath,
 
   return exports;
 
-}({}, vueCompositionApi, objectStringPath, Vue, debounce, equal, fnAnnotate, getHash, stringify));
+}({}, vueCompositionApi, debounce, objectStringPath, Vue, equal, fnAnnotate, getHash, stringify));
