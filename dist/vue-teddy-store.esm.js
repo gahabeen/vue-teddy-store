@@ -1,5 +1,5 @@
 /*!
-  * vue-teddy-store v0.5.23
+  * vue-teddy-store v0.5.3
   * (c) 2020 Gabin Desserprit
   * @license MIT
   */
@@ -33,11 +33,11 @@ var cache = {
         { space, name },
         {
           handler: debounce((newState) => {
-            try {
-              localStorage.setItem(prefix(space, name), JSON.stringify(newState));
-            } catch (error) {
-              console.warn('setting cache local', error);
-            }
+            // try {
+            localStorage.setItem(prefix(space, name), JSON.stringify(newState));
+            // } catch (error) {
+            //   console.warn('setting cache local', error)
+            // }
           }, 200),
           immediate: true,
           deep: true,
