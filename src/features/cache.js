@@ -22,7 +22,11 @@ export default {
         { space, name },
         {
           handler: debounce((newState) => {
-            localStorage.setItem(prefix(space, name), JSON.stringify(newState))
+            try {
+              localStorage.setItem(prefix(space, name), JSON.stringify(newState))
+            } catch (error) {
+              console.warn('setting cache local', error)
+            }
           }, 200),
           immediate: true,
           deep: true,
